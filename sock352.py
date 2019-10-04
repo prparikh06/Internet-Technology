@@ -37,6 +37,14 @@ class packet:
 # define the UDP ports all messages are sent
 # and received from
 
+SOCK352_SYN = 0x01 #Connection Initiation
+SOCK352_FIN = 0x02 #Connection End
+SOCK352_ACK = 0x04 #Connection Acknowledgement 
+SOCK352_RESET = 0x08 #Reset Connection
+SOCK352_HAS_OPT = 0xA0 # Option Field is valid
+
+
+
 def init(UDPportTx,UDPportRx):   # initialize your UDP socket here 
     #global port nums
     global portTx
