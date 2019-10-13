@@ -57,14 +57,19 @@ def init(UDPportTx,UDPportRx):   # initialize your UDP socket here
     pass 
     
 class socket:
-    #initialize the socket TODO did not know what else to add
     def __init__(self):  # fill in your code here 
-        #need to create server and client socket
-        global serversocket = syssock.socket(syssock.AF_INET, syssock.SOCK_DGRAM) #UDP socket
-        global clientsocket = syssock.socket(syssock.AF_INET, syssock.SOCK_DGRAM)
-
+        #TODO: not sure if this is right
+   #     global serversocket = syssock.socket(syssock.AF_INET, syssock.SOCK_DGRAM) #UDP socket
+   #     global clientsocket = syssock.socket(syssock.AF_INET, syssock.SOCK_DGRAM)
+    
+    global serversocket
+    global clientsocket
+        if socket is None:
+            self.serversocket = syssock.socket(syssock.AF_INET, syssock.SOCK_DGRAM)
+            self.clientsocket = syssock.socket(syssock.AF_INET, syssock.SOCK_DGRAM)
+        else:
         self.serversocket = serversocket
-        self.clientsocket = clientsocket
+        self.clientsocket = clientsocket 
 
         return
     
@@ -73,6 +78,17 @@ class socket:
         
     #establish the connection - 3 way handshake
     def connect(self,address):  # fill in your code here 
+        self.serversocket.connect(host, port) #TODO not sure what else this needs
+
+        return 
+    
+    def listen(self,backlog):
+        return
+
+    #accept the connection
+    def accept(self):
+        #client socket is client socket used to send/receive; address = serversocket's addy
+        (clientsocket, address) = (1,1)  # change this to your code  
         
         global cPacket
         global sPacket
@@ -93,15 +109,18 @@ class socket:
         cPacket.ack_no = 0
 
         #pack packet and send to addresss
-        clientPakcetHeader = struct.Struct(sock352PktHdrData)
-        clientHeader = clientPakcetHeader.pack(cPacket.version,cPacket.flags, cPacket.opt_ptr, 
+        clientPacketHeader = struct.Struct(sock352PktHdrData)
+        clientHeader = clientPacketHeader.pack(cPacket.version,cPacket.flags, cPacket.opt_ptr, 
                     cPacket.protocol, cPacket.checksum, cPacket.soure_port,cPacket.dest_port,
                     cPacket.sequence_no, cPacket.ack_no, cPacket.window,cPacket.payload_len)
         serversocket.send(clientHeader, (destination, UDPportTx))
-        #TODO literally send this header to server
-
+        #TODO literally send this header to server   
+        return (clientsocket,address)
+    
+    
+    
+    def close(self):   # fill in your code here 
         
-
         #STEP 2: server receives SYN and sends SYN-ACK in return
         #TODO CHECK THE STATUS/FLAGS OF THE RECEVIED PACKET - 
         sPacket = self.recv()
@@ -117,70 +136,42 @@ class socket:
 
         #TODO accept on server side again
         sPacket.sequence_no = 
-        sPacket.ack_no = cPacket.ack_no + 1
-
-        return 
-    
-    def listen(self,backlog):
-        return
-
-    #accept the connection
-    def accept(self):
-
-        #client socket is client socket used to send/receive; address = serversocket's addy
-        
-        
-        (clientsocket, address) = (1,1)  # change this to your code 
-        return (clientsocket,address)
-    
-    #close the connection - 2 double handshakes
-    def close(self):   # fill in your code here 
+        sPacket.ack_no = cPacket.ack_no + 1 
         return 
 
-    #send the packet?
+
     def send(self,buffer):  # fill in your code here 
         #buffer = file contents
-        
         #bytessent should be size of what we can handle 
         
-        bytesent = len(buffer)
-        if bytesent == 0:
-            return 0
-        #buffer is the size of packet
-        if bytesent <= MAX_PACKET_SIZE:    
-            #TODO send to server socket
-            self.serversocket.send(buffer)
-        else:
-            #need to split and send into smaller packets
-            while  bytesent >= MAX_PACKET_SIZE:
-                #TODO send 32000
-                bytesent -= MAX_PACKET_SIZE
-                # TODO how do we do thisself.serversocket.send(buffer(bytesent))
+        bytesent == 0
+        while bytesent < len(buffer)
+        #buffer is larger than max
+            if  len(buffer) >= MAX_PACKET_SIZE:
+                self.clientsocket.send(buffer[bytesent: MAX_PACKET_SIZE])
+                len(buffer) -= MAX_PACKET_SIZE
+                bytesent += MAX_PACKET_SIZE
+            else: 
+                len(buffer) <= MAX_PACKET_SIZE:    
+                self.clientsocket.send(buffer)
+                bytesent += len(buffer)       
+            return bytesent 
+         if bytesent == 0
+            raise RuntimeError("Connection broken")
+    
 
-            #TODO send last packet which would be of less than 32K
-
-            bytesent+=toSend
-        
-        return bytesent 
-
-    #receive the packet?
     def recv(self,nbytes):
         bytesreceived = 0     # fill in your code here
-        return bytesreceived 
-    
-    #method to receive ACK
-    def recvACK(self):
-
-
-
-        return
-    
-    #method to send ACK
-    def sendACK(self):
-
-
-
-        return
-
+        packets = []
         
+        while bytesreceived < nbytes:
+            packet = self.clientsocket.recv(min(nbytes - bytesreceived, MAX_PACKET_SIZE))
+            if packet == '':
+                raise RuntimeError("Connection broken")
+            packets.append(packet)
+            bytesreceived = bytesreceived + len(packet)
+        return bytesreceived
+        
+
+
 
