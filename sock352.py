@@ -80,6 +80,52 @@ class socket:
     def connect(self,address):  # fill in your code here 
         self.serversocket.connect(host, port) #TODO not sure what else this needs
 
+        global cPacket
+        global sPacket
+        
+        destination = address[0] #client passes in (destination,port)
+        port = address[1]
+
+        print("initiating 3 way handshake!")
+     
+        #STEP 1: send from client
+        #establish random sequence
+        
+        print("our randomly generated sequnce is: ",randSequence)
+        #initialize the packet to be sent by client
+        cPacket = self.packet
+        cPacket.sequence_no = rand.rand()
+        cPacket.flags = {SYN}
+        cPacket.ack_no = 0
+
+        #pack packet and send to addresss
+        clientPacketHeader = struct.Struct(sock352PktHdrData)
+        clientHeader = clientPacketHeader.pack(cPacket.version,cPacket.flags, cPacket.opt_ptr, 
+                    cPacket.protocol, cPacket.checksum, cPacket.soure_port,cPacket.dest_port,
+                    cPacket.sequence_no, cPacket.ack_no, cPacket.window,cPacket.payload_len)
+        serversocket.send(clientHeader, (destination, UDPportTx))
+        #TODO literally send this header to server   
+        return (clientsocket,address)
+    
+     #STEP 2: server receives SYN and sends SYN-ACK in return
+        #TODO CHECK THE STATUS/FLAGS OF THE RECEVIED PACKET - 
+        sPacket = self.recv()
+        sPacket.sequence_no = rand.rand()
+        sPacket.flags = {SYN, ACK}
+        sPacket.ack_no = sPacket.sequence_no + 1
+        #TODO send another header back to client
+
+        #STEP 3: client sends back random ACK
+        cPacket.sequence_no = sPacket.ack_no
+        cPacket.ack_no = sPacket.sequence_no + 1
+        cPacket.flags = {SYN,ACK}
+
+        #TODO accept on server side again
+        sPacket.sequence_no = 
+        sPacket.ack_no = cPacket.ack_no + 1 
+        return 
+
+    
         return 
     
     def listen(self,backlog):
@@ -117,11 +163,7 @@ class socket:
         #TODO literally send this header to server   
         return (clientsocket,address)
     
-    
-    
-    def close(self):   # fill in your code here 
-        
-        #STEP 2: server receives SYN and sends SYN-ACK in return
+     #STEP 2: server receives SYN and sends SYN-ACK in return
         #TODO CHECK THE STATUS/FLAGS OF THE RECEVIED PACKET - 
         sPacket = self.recv()
         sPacket.sequence_no = rand.rand()
@@ -139,6 +181,56 @@ class socket:
         sPacket.ack_no = cPacket.ack_no + 1 
         return 
 
+    
+    
+    
+    def close(self):   # fill in your code here 
+        
+                global cPacket
+        global sPacket
+        
+        destination = address[0] #client passes in (destination,port)
+        port = address[1]
+
+        print("initiating 3 way handshake!")
+     
+        #STEP 1: send from client
+        #establish random sequence
+        
+        print("our randomly generated sequnce is: ",randSequence)
+        #initialize the packet to be sent by client
+        cPacket = self.packet
+        cPacket.sequence_no = rand.rand()
+        cPacket.flags = {SYN}
+        cPacket.ack_no = 0
+
+        #pack packet and send to addresss
+        clientPacketHeader = struct.Struct(sock352PktHdrData)
+        clientHeader = clientPacketHeader.pack(cPacket.version,cPacket.flags, cPacket.opt_ptr, 
+                    cPacket.protocol, cPacket.checksum, cPacket.soure_port,cPacket.dest_port,
+                    cPacket.sequence_no, cPacket.ack_no, cPacket.window,cPacket.payload_len)
+        serversocket.send(clientHeader, (destination, UDPportTx))
+        #TODO literally send this header to server   
+        return (clientsocket,address)
+    
+     #STEP 2: server receives SYN and sends SYN-ACK in return
+        #TODO CHECK THE STATUS/FLAGS OF THE RECEVIED PACKET - 
+        sPacket = self.recv()
+        sPacket.sequence_no = rand.rand()
+        sPacket.flags = {SYN, ACK}
+        sPacket.ack_no = sPacket.sequence_no + 1
+        #TODO send another header back to client
+
+        #STEP 3: client sends back random ACK
+        cPacket.sequence_no = sPacket.ack_no
+        cPacket.ack_no = sPacket.sequence_no + 1
+        cPacket.flags = {SYN,ACK}
+
+        #TODO accept on server side again
+        sPacket.sequence_no = 
+        sPacket.ack_no = cPacket.ack_no + 1 
+        return
+       
 
     def send(self,buffer):  # fill in your code here 
         #buffer = file contents
