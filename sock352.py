@@ -42,8 +42,8 @@ HAS_OPT = 0xA0 # Option Field is valid
 
 def init(UDPportTx,UDPportRx):   # initialize your UDP socket here 
     #global port nums
-    global portTx
-    global portRx
+    global portTx #transmit = client
+    global portRx #receiving = server
 
     if int(UDPportTx) == 0:
         portTx = DEFAULT
@@ -58,19 +58,11 @@ def init(UDPportTx,UDPportRx):   # initialize your UDP socket here
     
 class socket:
     def __init__(self):  # fill in your code here 
-        #TODO: not sure if this is right
-   #     global serversocket = syssock.socket(syssock.AF_INET, syssock.SOCK_DGRAM) #UDP socket
-   #     global clientsocket = syssock.socket(syssock.AF_INET, syssock.SOCK_DGRAM)
-    
-    global serversocket
-    global clientsocket
-        if socket is None:
-            self.serversocket = syssock.socket(syssock.AF_INET, syssock.SOCK_DGRAM)
-            self.clientsocket = syssock.socket(syssock.AF_INET, syssock.SOCK_DGRAM)
-        else:
-        self.serversocket = serversocket
-        self.clientsocket = clientsocket 
-
+        #make a UDP socket as defined in the Python library
+        global mySock
+        global packet
+        self.mySock = syssock.socket(syssock.AF_INET, syssock.SOCK_DGRAM)
+     
         return
     
     def bind(self,address):
@@ -78,14 +70,12 @@ class socket:
         
     #establish the connection - 3 way handshake
     def connect(self,address):  # fill in your code here 
-        self.serversocket.connect(host, port) #TODO not sure what else this needs
-
-        global cPacket
-        global sPacket
-        
+       
         destination = address[0] #client passes in (destination,port)
         port = address[1]
-
+        #assign portTx to the port number that the client passed; portRx = destination
+        portTx = port
+        portRx = destination
         print("initiating 3 way handshake!")
      
         #STEP 1: send from client
@@ -103,28 +93,10 @@ class socket:
         clientHeader = clientPacketHeader.pack(cPacket.version,cPacket.flags, cPacket.opt_ptr, 
                     cPacket.protocol, cPacket.checksum, cPacket.soure_port,cPacket.dest_port,
                     cPacket.sequence_no, cPacket.ack_no, cPacket.window,cPacket.payload_len)
-        serversocket.send(clientHeader, (destination, UDPportTx))
-        #TODO literally send this header to server   
-        return (clientsocket,address)
-    
-     #STEP 2: server receives SYN and sends SYN-ACK in return
-        #TODO CHECK THE STATUS/FLAGS OF THE RECEVIED PACKET - 
-        sPacket = self.recv()
-        sPacket.sequence_no = rand.rand()
-        sPacket.flags = {SYN, ACK}
-        sPacket.ack_no = sPacket.sequence_no + 1
-        #TODO send another header back to client
-
-        #STEP 3: client sends back random ACK
-        cPacket.sequence_no = sPacket.ack_no
-        cPacket.ack_no = sPacket.sequence_no + 1
-        cPacket.flags = {SYN,ACK}
-
-        #TODO accept on server side again
-        sPacket.sequence_no = 
-        sPacket.ack_no = cPacket.ack_no + 1 
-        return 
-
+        
+        #sendto is inbuilt python function
+        self.mySock.sendto(clientHeader,portRx)
+            
     
         return 
     
@@ -133,37 +105,8 @@ class socket:
 
     #accept the connection
     def accept(self):
-        #client socket is client socket used to send/receive; address = serversocket's addy
-        (clientsocket, address) = (1,1)  # change this to your code  
-        
-        global cPacket
-        global sPacket
-        
-        destination = address[0] #client passes in (destination,port)
-        port = address[1]
-
-        print("initiating 3 way handshake!")
-     
-        #STEP 1: send from client
-        #establish random sequence
-        
-        print("our randomly generated sequnce is: ",randSequence)
-        #initialize the packet to be sent by client
-        cPacket = self.packet
-        cPacket.sequence_no = rand.rand()
-        cPacket.flags = {SYN}
-        cPacket.ack_no = 0
-
-        #pack packet and send to addresss
-        clientPacketHeader = struct.Struct(sock352PktHdrData)
-        clientHeader = clientPacketHeader.pack(cPacket.version,cPacket.flags, cPacket.opt_ptr, 
-                    cPacket.protocol, cPacket.checksum, cPacket.soure_port,cPacket.dest_port,
-                    cPacket.sequence_no, cPacket.ack_no, cPacket.window,cPacket.payload_len)
-        serversocket.send(clientHeader, (destination, UDPportTx))
-        #TODO literally send this header to server   
-        return (clientsocket,address)
     
-     #STEP 2: server receives SYN and sends SYN-ACK in return
+        #STEP 2: server receives SYN and sends SYN-ACK in return
         #TODO CHECK THE STATUS/FLAGS OF THE RECEVIED PACKET - 
         sPacket = self.recv()
         sPacket.sequence_no = rand.rand()
@@ -179,6 +122,9 @@ class socket:
         #TODO accept on server side again
         sPacket.sequence_no = 
         sPacket.ack_no = cPacket.ack_no + 1 
+        
+        
+        #need to return (s2,address)
         return 
 
     
@@ -186,70 +132,32 @@ class socket:
     
     def close(self):   # fill in your code here 
         
-                global cPacket
-        global sPacket
         
-        destination = address[0] #client passes in (destination,port)
-        port = address[1]
-
-        print("initiating 3 way handshake!")
-     
-        #STEP 1: send from client
-        #establish random sequence
-        
-        print("our randomly generated sequnce is: ",randSequence)
-        #initialize the packet to be sent by client
-        cPacket = self.packet
-        cPacket.sequence_no = rand.rand()
-        cPacket.flags = {SYN}
-        cPacket.ack_no = 0
-
-        #pack packet and send to addresss
-        clientPacketHeader = struct.Struct(sock352PktHdrData)
-        clientHeader = clientPacketHeader.pack(cPacket.version,cPacket.flags, cPacket.opt_ptr, 
-                    cPacket.protocol, cPacket.checksum, cPacket.soure_port,cPacket.dest_port,
-                    cPacket.sequence_no, cPacket.ack_no, cPacket.window,cPacket.payload_len)
-        serversocket.send(clientHeader, (destination, UDPportTx))
-        #TODO literally send this header to server   
-        return (clientsocket,address)
-    
-     #STEP 2: server receives SYN and sends SYN-ACK in return
-        #TODO CHECK THE STATUS/FLAGS OF THE RECEVIED PACKET - 
-        sPacket = self.recv()
-        sPacket.sequence_no = rand.rand()
-        sPacket.flags = {SYN, ACK}
-        sPacket.ack_no = sPacket.sequence_no + 1
-        #TODO send another header back to client
-
-        #STEP 3: client sends back random ACK
-        cPacket.sequence_no = sPacket.ack_no
-        cPacket.ack_no = sPacket.sequence_no + 1
-        cPacket.flags = {SYN,ACK}
-
-        #TODO accept on server side again
-        sPacket.sequence_no = 
-        sPacket.ack_no = cPacket.ack_no + 1 
         return
        
 
     def send(self,buffer):  # fill in your code here 
         #buffer = file contents
         #bytessent should be size of what we can handle 
-        
-        bytesent == 0
+        bufferIndex = len(buffer)
+        bytesent = 0
         while bytesent < len(buffer)
         #buffer is larger than max
-            if  len(buffer) >= MAX_PACKET_SIZE:
-                self.clientsocket.send(buffer[bytesent: MAX_PACKET_SIZE])
-                len(buffer) -= MAX_PACKET_SIZE
+            if  bufferLen >= MAX_PACKET_SIZE:
+                #TODO send the info using sendto? --make packet that will actually get sent
+                self.mySock.sendto(buffer[bytesent: MAX_PACKET_SIZE],portRx)
+                bufferIndex -= MAX_PACKET_SIZE
                 bytesent += MAX_PACKET_SIZE
+                continue
             else: 
                 len(buffer) <= MAX_PACKET_SIZE:    
                 self.clientsocket.send(buffer)
                 bytesent += len(buffer)       
-            return bytesent 
-         if bytesent == 0
-            raise RuntimeError("Connection broken")
+            
+                return bytesent 
+
+            if bufferIndex == 0
+                raise RuntimeError("Connection broken")
     
 
     def recv(self,nbytes):
