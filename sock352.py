@@ -131,10 +131,47 @@ class socket:
     
     
     def close(self):   # fill in your code here 
+         
+       #Step 1 client sends FIN
+        cPacket = self.packet
+        cPacket.sequence_no = rand.rand()
+        cPacket.flags = {FIN}
+        cPacket.ack_no = 0
         
-        
-        return
+        clientPacketHeader = struct.Struct(sock352PktHdrData)
+        clientHeader = clientPacketHeader.pack(cPacket.version,cPacket.flags, cPacket.opt_ptr, 
+                    cPacket.protocol, cPacket.checksum, cPacket.soure_port,cPacket.dest_port,
+                    cPacket.sequence_no, cPacket.ack_no, cPacket.window,cPacket.payload_len)
+
+        self.mySock.sendto(clientHeader,portRx)
        
+      #STEP 2 & 3: server receives FIN and sends FIN-ACK back
+        sPacket = self.recv()
+        sPacket.sequence_no = rand.rand()
+        sPacket.flags = {FIN, ACK}
+        sPacket.ack_no = sPacket.sequence_no + 1        
+        
+         serverHeader = udpPkt_hdr_data.pack(sPacket.version, sPacket.flags, sPacket.opt_ptr, 
+                    sPacket.protocol, sPacket.checksum, sPacket.soure_port, sPacket.dest_port,
+                    sPacket.sequence_no, sPacket.ack_no, sPacket.window, sPacket.payload_len)
+            self.mySock.sendto(serverHeader,portRx)
+
+            
+            
+        #Step 4: client sends back an ACK
+        cPacket.sequence_no = sPacket.ack_no
+        cPacket.ack_no = sPacket.sequence_no + 1
+        cPacket.flags = {ACK}
+
+        sPacket = self.recv()
+        sPacket.sequence_no = rand.rand
+        sPacket.ack_no = cPacket.ack_no + 1 
+        
+        
+        #need to return (s2,address)
+        print("Closing the connection")
+        self.mySock.close()
+        return 
 
     def send(self,buffer):  # fill in your code here 
         #buffer = file contents
