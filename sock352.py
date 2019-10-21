@@ -13,18 +13,12 @@ DEFAULT = 5299
 
 #creating a packet "struct"
 class packet:
-    def __init__(self,version,flags,header_len,sequence_no,ack_no,window,payload_len):     #initialize te packet
+    def __init__(self,flag,header_len,sequence_no,ack_no,payload_len):     #initialize the packet
         self.version = 0x1 #should always be 0x1
         self.flags = flags{}
-        self.opt_ptr = 0
-        self.protocol = 0
         self.header_len = header_len
-        self.checksum = 0
-        self.soure_port = 0
-        self.dest_port = 0
         self.sequence_no = sequence_no
         self.ack_no = ack_no
-        self.window = 0
         self.payload_len = payload_len
         return   
  
@@ -87,17 +81,27 @@ class socket:
         cPacket.sequence_no = rand.rand()
         cPacket.flags = {SYN}
         cPacket.ack_no = 0
+        cPacket.payload_len = 0
 
         #pack packet and send to addresss
         clientPacketHeader = struct.Struct(sock352PktHdrData)
-        clientHeader = clientPacketHeader.pack(cPacket.version,cPacket.flags, cPacket.opt_ptr, 
-                    cPacket.protocol, cPacket.checksum, cPacket.soure_port,cPacket.dest_port,
-                    cPacket.sequence_no, cPacket.ack_no, cPacket.window,cPacket.payload_len)
+        clientHeader = clientPacketHeader.pack(cPacket.version,cPacket.flags, cPacket.sequence_no, cPacket.ack_no, cPacket.payload_len)
         
         #sendto is inbuilt python function
         self.mySock.sendto(clientHeader,portRx)
-            
-    
+        
+        #STEP 3: recv ACK from server, send final ACK
+        (cPacket, address) = self.recvACK()  
+        cPacket.flags = {SYN,ACK} #TODO check flags
+        cPacket.sequence_no = cPacket.ack_no
+        cPacket.ack_no = cPacket.sequence_no + 1
+
+        #pack packet and send to addresss = portTX??
+        clientPacketHeader = struct.Struct(sock352PktHdrData)
+        clientHeader = clientPacketHeader.pack(cPacket.version,cPacket.flags, cPacket.sequence_no, cPacket.ack_no, cPacket.payload_len)
+        self.mySock.sendto(clientHeader,portTx)
+
+        print("Connected! (Host)")
         return 
     
     def listen(self,backlog):
@@ -107,41 +111,77 @@ class socket:
     def accept(self):
     
         #STEP 2: server receives SYN and sends SYN-ACK in return
-        #TODO CHECK THE STATUS/FLAGS OF THE RECEVIED PACKET - 
-        sPacket = self.recv()
+        #TODO CHECK THE STATUS/FLAGS OF THE RECEVIED PACKET 
+
+        (sPacket, address) = self.recvACK() #TODO are we technically receiving 0 bytes?
         sPacket.sequence_no = rand.rand()
-        sPacket.flags = {SYN, ACK}
+        sPacket.flags = {SYN,ACK}
         sPacket.ack_no = sPacket.sequence_no + 1
-        #TODO send another header back to client
+        sPacket.payload_len = 0 #TODO
+        
+        #pack packet and send to addresss portTX??
+        serverPacketHeader = struct.Struct(sock352PktHdrData)
+        serverHeader = serverPacketHeader.pack(sPacket.flags, sPacket.sequence_no, sPacket.ack_no,cPacket.payload_len)
+        self.mySock.sendto(serverHeader,portTx)
+        
+        #STEP 3 contd: recv the final packet the client sent
+        (sPacket, address) = self.mySock.recvACK() #TODO check flag 
 
-        #STEP 3: client sends back random ACK
-        cPacket.sequence_no = sPacket.ack_no
-        cPacket.ack_no = sPacket.sequence_no + 1
-        cPacket.flags = {SYN,ACK}
-
-        #TODO accept on server side again
-        sPacket.sequence_no = 
-        sPacket.ack_no = cPacket.ack_no + 1 
+        #sPacket.sequence_no = 
+        #sPacket.ack_no = sPacket.ack_no + 1 
         
         
         #need to return (s2,address)
         return 
 
     
-    
-    
-    def close(self):   # fill in your code here 
+    def close(self):   # fill in your code here
+
+       #Step 1 client sends FIN
+        cPacket = self.packet
+        cPacket.sequence_no = rand.rand()
+        cPacket.flags = {FIN}
+        cPacket.ack_no = 0 #TODO
+        cPacket.payload_len = 0 #TODO
+
+        clientPacketHeader = struct.Struct(sock352PktHdrData)
+        clientHeader = clientPacketHeader.pack(cPacket.version,cPacket.flags, cPacket.sequence_no, cPacket.ack_no, cPacket.payload_len)
         
+        self.mySock.sendto(clientHeader,portRx)
+
+      #STEP 2 & 3: server receives FIN and sends FIN-ACK back
+        (sPacket, address) = self.recvfrom()
+        sPacket.sequence_no = rand.rand()
+        sPacket.flags = {FIN, ACK}
+        sPacket.ack_no = sPacket.sequence_no + 1
+        sPacket.payload_len = 0 #TODO
+
+        serverHeader = udpPkt_hdr_data.pack(sPacket.flags, sPacket.sequence_no, sPacket.ack_no,cPacket.payload_len)
+        self.mySock.sendto(serverHeader,portTx)
+
+
+        #Step 4: client sends back an ACK
+        cPacket.sequence_no = sPacket.ack_no
+        cPacket.ack_no = sPacket.sequence_no + 1
+        cPacket.flags = {ACK}
+
+        (sPacket, address) = self.recvACK()
+        sPacket.sequence_no = rand.rand()
+        sPacket.ack_no = cPacket.ack_no + 1
+
+
+        #need to return (s2,address)
+        print("Closing the connection")
         
-        return
-       
+        self.mySock.close()
+        return  
 
     def send(self,buffer):  # fill in your code here 
         #buffer = file contents
         #bytessent should be size of what we can handle 
         bufferIndex = len(buffer)
         bytesent = 0
-        while bytesent < len(buffer)
+        while bytesent < bufferIndex:
         #buffer is larger than max
             if  bufferLen >= MAX_PACKET_SIZE:
                 #TODO send the info using sendto? --make packet that will actually get sent
@@ -149,15 +189,17 @@ class socket:
                 bufferIndex -= MAX_PACKET_SIZE
                 bytesent += MAX_PACKET_SIZE
                 continue
+            elif bufferIndex == 0:
+                raise RuntimeError("Connection broken")
+            
             else: 
                 len(buffer) <= MAX_PACKET_SIZE:    
-                self.clientsocket.send(buffer)
+                self.mySock.send(buffer)
                 bytesent += len(buffer)       
             
-                return bytesent 
+        return bytesent 
 
-            if bufferIndex == 0
-                raise RuntimeError("Connection broken")
+            
     
 
     def recv(self,nbytes):
@@ -165,13 +207,23 @@ class socket:
         packets = []
         
         while bytesreceived < nbytes:
-            packet = self.clientsocket.recv(min(nbytes - bytesreceived, MAX_PACKET_SIZE))
+            packet = self.mySock.recv(min(nbytes - bytesreceived, MAX_PACKET_SIZE))
             if packet == '':
                 raise RuntimeError("Connection broken")
             packets.append(packet)
             bytesreceived = bytesreceived + len(packet)
         return bytesreceived
         
+    def recvACK(self):
+        recvSize = struct.calcsize(sock352PktHdrData)
+        (data, address) = self.mySock.recvfrom(recvSize)
+        #unpack whatever data we just received
+        recvPacket = struct.unpack(sock352PktHdrData,data)
+
+        #check the flags of recvPacket here TODO
+
+        #return the received packet
+        return (recvPacket , address)
 
 
 
