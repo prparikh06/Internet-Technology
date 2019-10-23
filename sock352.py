@@ -13,9 +13,9 @@ DEFAULT = 5299
 
 #creating a packet "struct"
 class packet:
-    def __init__(self,flag,header_len,sequence_no,ack_no,payload_len):     #initialize the packet
+    def __init__(self,flags,header_len,sequence_no,ack_no,payload_len):     #initialize the packet
         self.version = 0x1 #should always be 0x1
-        self.flags = flags{}
+        self.flags = flags
         self.header_len = header_len
         self.sequence_no = sequence_no
         self.ack_no = ack_no
@@ -127,10 +127,7 @@ class socket:
         #STEP 3 contd: recv the final packet the client sent
         (sPacket, address) = self.mySock.recvACK() #TODO check flag 
 
-        #sPacket.sequence_no = 
-        #sPacket.ack_no = sPacket.ack_no + 1 
-        
-        
+        print ("Done connecting...")
         #need to return (s2,address)
         return 
 
@@ -194,12 +191,10 @@ class socket:
             
             else: 
                 len(buffer) <= MAX_PACKET_SIZE:    
-                self.mySock.send(buffer)
+                self.mySock.sendto(buffer[bytesent: MAX_PACKET_SIZE],portRx)
                 bytesent += len(buffer)       
             
         return bytesent 
-
-            
     
 
     def recv(self,nbytes):
@@ -225,5 +220,10 @@ class socket:
         #return the received packet
         return (recvPacket , address)
 
+
+    def goBackN(self,nbytes):
+        
+        
+        return
 
 
