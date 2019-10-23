@@ -13,12 +13,18 @@ DEFAULT = 5299
 
 #creating a packet "struct"
 class packet:
-    def __init__(self):#,flags,header_len,sequence_no,ack_no,payload_len):     #initialize the packet
-        
+    def __init__(self,flags, header_len,sequence_no,ack_no,payload_len):     #initialize the packet
+        self.version = 0x1
         self.flags = flags
+        self.opt_ptr = 0
+        self.checksum = 0 #TODO what is this
+        self.protocol = 0
         self.header_len = header_len
+        self.source_port = 0
+        self.dest_port = 0
         self.sequence_no = sequence_no
         self.ack_no = ack_no
+        self.window = 0
         self.payload_len = payload_len
         return   
  
@@ -76,15 +82,19 @@ class socket:
         #establish random sequence
         
        
+
         #initialize the packet to be sent by client
+        clientPacketHeader = struct.Struct(sock352PktHdrData)
+        header_len = struct.calcsize(clientPacketHeader)
         cPacket = packet
         cPacket.sequence_no = random.randint(1,10000)
         cPacket.flags = {SYN}
         cPacket.ack_no = 0
         cPacket.payload_len = 0
+        cPacket.header_len = header_len 
 
         #pack packet and send to addresss
-        clientPacketHeader = struct.Struct(sock352PktHdrData)
+        
         clientHeader = clientPacketHeader.pack(cPacket)
         
         #sendto is inbuilt python function
@@ -97,7 +107,7 @@ class socket:
         cPacket.ack_no = cPacket.sequence_no + 1
 
         #pack packet and send to addresss = portTX??
-        clientPacketHeader = struct.Struct(sock352PktHdrData)
+       
         clientHeader = clientPacketHeader.pack(cPacket)
         self.mySock.sendto(clientHeader,portTx)
 
@@ -112,15 +122,17 @@ class socket:
     
         #STEP 2: server receives SYN and sends SYN-ACK in return
         #TODO CHECK THE STATUS/FLAGS OF THE RECEVIED PACKET 
-
+        serverPacketHeader = struct.Struct(sock352PktHdrData)
+        header_len = struct.calcsize(serverPacketHeader)
         (sPacket, address) = self.recvACK() #TODO are we technically receiving 0 bytes?
         sPacket.sequence_no = random.randint(1,10000)
         sPacket.flags = {SYN,ACK}
         sPacket.ack_no = sPacket.sequence_no + 1
         sPacket.payload_len = 0 #TODO
+        sPacket.header_len = header_len
         
         #pack packet and send to addresss portTX??
-        serverPacketHeader = struct.Struct(sock352PktHdrData)
+        
         serverHeader = serverPacketHeader.pack(sPacket.flags, sPacket.sequence_no, sPacket.ack_no,cPacket.payload_len)
         self.mySock.sendto(serverHeader,portTx)
         
