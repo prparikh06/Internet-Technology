@@ -9,7 +9,7 @@ import random
 MAX_PACKET_SIZE = 32000
 sock352PktHdrData = '!BBBBHHLLQQLL' 
 DEFAULT = 5299
-
+packets = []
 
 #creating a packet "struct"
 class packet:
@@ -123,17 +123,18 @@ class socket:
         #STEP 2: server receives SYN and sends SYN-ACK in return
         #TODO CHECK THE STATUS/FLAGS OF THE RECEVIED PACKET 
         serverPacketHeader = struct.Struct(sock352PktHdrData)
-        header_len = struct.calcsize(s(sock352PktHdrDatar)
-        (sPacket address) = self.recvACK() #TODO are we technically receiving 0 bytes?
-
-
-
-	sPacket.sequence_no = random.randint(1,10000)
+        header_len = struct.calcsize((sock352PktHdrData)
+        
+        #unpack whatever data we just received
+        (sPacket, address) = self.recvAck()
+            
+        sPacket.sequence_no = random.randint(1,10000)
         sPacket.flags = {SYN,ACK}
         sPacket.ack_no = sPacket.sequence_no + 1
         sPacket.payload_len = 0 #TODO
         sPacket.header_len = header_len
-        
+            
+      
         #pack packet and send to addresss portTX??
         
         serverHeader = serverPacketHeader.pack(sPacket.flags, sPacket.sequence_no, sPacket.ack_no,cPacket.payload_len)
@@ -193,42 +194,45 @@ class socket:
         #bytessent should be size of what we can handle 
         bufferIndex = len(buffer)
         bytesent = 0
+        packetIndex = 0
         while bytesent < bufferIndex:
         #buffer is larger than max
-            if  bufferLen >= MAX_PACKET_SIZE:
+            try:
+                
                 #TODO send the info using sendto? --make packet that will actually get sent
-                self.mySock.sendto(buffer[bytesent: MAX_PACKET_SIZE],portRx)
-                bufferIndex -= MAX_PACKET_SIZE
-                bytesent += MAX_PACKET_SIZE
-                continue
-            elif bufferIndex == 0:
-                raise RuntimeError("Connection broken")
-            
-            else: 
-                len(buffer) <= MAX_PACKET_SIZE    
-                self.mySock.sendto(buffer[bytesent: MAX_PACKET_SIZE],portRx)
-                bytesent += len(buffer)       
-            
+               
+                if (packetIndex > 0) #there is no packet that has been sent yet
+                    #check for GBN
+                    if (packets[packetIndex-1] == None) #TODO
+                        #do go back n ?    
+                    self.mySock.sendto(buffer[bytesent: MAX_PACKET_SIZE],portRx)
+                    bufferIndex -= MAX_PACKET_SIZE
+                    bytesent += MAX_PACKET_SIZE
+                    continue
+                          
+            except syssock.timeout:
+                pass
         return bytesent 
     
 
     def recv(self,nbytes):
         bytesreceived = 0     # fill in your code here
-        packets = []
+        
         
         while bytesreceived < nbytes:
-            packet = self.mySock.recv(min(nbytes - bytesreceived, MAX_PACKET_SIZE))
-            if packet == '':
-                raise RuntimeError("Connection broken")
-            packets.append(packet)
-            bytesreceived = bytesreceived + len(packet)
+            try:
+                currPacket = self.mySock.recv(min(nbytes - bytesreceived, MAX_PACKET_SIZE))
+                packets.append(currPacket)
+                bytesreceived = bytesreceived + len(packet)
+            except syssock.timeout:
+                pass
         return bytesreceived
         
     def recvACK(self):
         recvSize = struct.calcsize(sock352PktHdrData)
         (data, address) = self.mySock.recvfrom(recvSize)
         #unpack whatever data we just received
-        recvPacket = struct.unpack(sock352PktHdrData,data)
+        recvPacket = sock352PktHdrData.unpack(data)
 
         #check the flags of recvPacket here TODO
 
