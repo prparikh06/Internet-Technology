@@ -85,7 +85,7 @@ class socket:
 
         #initialize the packet to be sent by client
         clientPacketHeader = struct.Struct(sock352PktHdrData)
-        header_len = struct.calcsize(clientPacketHeader)
+        header_len = struct.calcsize(sock352PktHdrData)
         cPacket = packet
         cPacket.sequence_no = random.randint(1,10000)
         cPacket.flags = {SYN}
@@ -123,9 +123,12 @@ class socket:
         #STEP 2: server receives SYN and sends SYN-ACK in return
         #TODO CHECK THE STATUS/FLAGS OF THE RECEVIED PACKET 
         serverPacketHeader = struct.Struct(sock352PktHdrData)
-        header_len = struct.calcsize(serverPacketHeader)
-        (sPacket, address) = self.recvACK() #TODO are we technically receiving 0 bytes?
-        sPacket.sequence_no = random.randint(1,10000)
+        header_len = struct.calcsize(s(sock352PktHdrDatar)
+        (sPacket address) = self.recvACK() #TODO are we technically receiving 0 bytes?
+
+
+
+	sPacket.sequence_no = random.randint(1,10000)
         sPacket.flags = {SYN,ACK}
         sPacket.ack_no = sPacket.sequence_no + 1
         sPacket.payload_len = 0 #TODO
