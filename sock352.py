@@ -200,14 +200,23 @@ class socket:
             try:
                 
                 #TODO send the info using sendto? --make packet that will actually get sent
-               
-                if (packetIndex > 0) #there is no packet that has been sent yet
-                    #check for GBN
-                    if (packets[packetIndex-1] == None) #TODO
-                        #do go back n ?    
+                if (packetIndex == 0): #first packet getting sent
                     self.mySock.sendto(buffer[bytesent: MAX_PACKET_SIZE],portRx)
                     bufferIndex -= MAX_PACKET_SIZE
                     bytesent += MAX_PACKET_SIZE
+                    continue
+
+                if (packetIndex > 0): #not the first packet
+                    #check for GBN
+                    if (packets[packetIndex-1] == None): #TODO #if there was no packet recvd before it/aka not been sent properly
+                        #do go back n ? send everything again? recursively redo
+                        packets.clear()
+                        send(self,buffer)
+                            
+                    else: 
+                        self.mySock.sendto(buffer[bytesent: MAX_PACKET_SIZE],portRx)
+                        bufferIndex -= MAX_PACKET_SIZE
+                        bytesent += MAX_PACKET_SIZE
                     continue
                           
             except syssock.timeout:
@@ -217,16 +226,18 @@ class socket:
 
     def recv(self,nbytes):
         bytesreceived = 0     # fill in your code here
-        
-        
+               
         while bytesreceived < nbytes:
             try:
                 currPacket = self.mySock.recv(min(nbytes - bytesreceived, MAX_PACKET_SIZE))
                 packets.append(currPacket)
                 bytesreceived = bytesreceived + len(packet)
+            
+            
             except syssock.timeout:
                 pass
         return bytesreceived
+
         
     def recvACK(self):
         recvSize = struct.calcsize(sock352PktHdrData)
@@ -240,9 +251,4 @@ class socket:
         return (recvPacket , address)
 
 
-    def goBackN(self,nbytes):
-        
-        
-        return
-
-
+    
