@@ -13,8 +13,8 @@ DEFAULT = 5299
 
 #creating a packet "struct"
 class packet:
-    def __init__(self,flags,header_len,sequence_no,ack_no,payload_len):     #initialize the packet
-        self.version = 0x1 #should always be 0x1
+    def __init__(self):#,flags,header_len,sequence_no,ack_no,payload_len):     #initialize the packet
+        
         self.flags = flags
         self.header_len = header_len
         self.sequence_no = sequence_no
@@ -54,7 +54,7 @@ class socket:
     def __init__(self):  # fill in your code here 
         #make a UDP socket as defined in the Python library
         global mySock
-        global packet
+        #global packet
         self.mySock = syssock.socket(syssock.AF_INET, syssock.SOCK_DGRAM)
      
         return
@@ -75,17 +75,17 @@ class socket:
         #STEP 1: send from client
         #establish random sequence
         
-        print("our randomly generated sequnce is: ",randSequence)
+       
         #initialize the packet to be sent by client
-        cPacket = self.packet
-        cPacket.sequence_no = rand.rand()
+        cPacket = packet
+        cPacket.sequence_no = random.randint(1,10000)
         cPacket.flags = {SYN}
         cPacket.ack_no = 0
         cPacket.payload_len = 0
 
         #pack packet and send to addresss
         clientPacketHeader = struct.Struct(sock352PktHdrData)
-        clientHeader = clientPacketHeader.pack(cPacket.version,cPacket.flags, cPacket.sequence_no, cPacket.ack_no, cPacket.payload_len)
+        clientHeader = clientPacketHeader.pack(cPacket)
         
         #sendto is inbuilt python function
         self.mySock.sendto(clientHeader,portRx)
@@ -98,7 +98,7 @@ class socket:
 
         #pack packet and send to addresss = portTX??
         clientPacketHeader = struct.Struct(sock352PktHdrData)
-        clientHeader = clientPacketHeader.pack(cPacket.version,cPacket.flags, cPacket.sequence_no, cPacket.ack_no, cPacket.payload_len)
+        clientHeader = clientPacketHeader.pack(cPacket)
         self.mySock.sendto(clientHeader,portTx)
 
         print("Connected! (Host)")
@@ -114,7 +114,7 @@ class socket:
         #TODO CHECK THE STATUS/FLAGS OF THE RECEVIED PACKET 
 
         (sPacket, address) = self.recvACK() #TODO are we technically receiving 0 bytes?
-        sPacket.sequence_no = rand.rand()
+        sPacket.sequence_no = random.randint(1,10000)
         sPacket.flags = {SYN,ACK}
         sPacket.ack_no = sPacket.sequence_no + 1
         sPacket.payload_len = 0 #TODO
@@ -129,13 +129,13 @@ class socket:
 
         print ("Done connecting...")
         #need to return (s2,address)
-        return 
+        return (self.mySock, address) 
 
     
     def close(self):   # fill in your code here
 
        #Step 1 client sends FIN
-        cPacket = self.packet
+        cPacket = packet()
         cPacket.sequence_no = rand.rand()
         cPacket.flags = {FIN}
         cPacket.ack_no = 0 #TODO
@@ -190,7 +190,7 @@ class socket:
                 raise RuntimeError("Connection broken")
             
             else: 
-                len(buffer) <= MAX_PACKET_SIZE:    
+                len(buffer) <= MAX_PACKET_SIZE    
                 self.mySock.sendto(buffer[bytesent: MAX_PACKET_SIZE],portRx)
                 bytesent += len(buffer)       
             

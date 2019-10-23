@@ -25,7 +25,7 @@ def main():
     # open the file for writing
     filename = args['filename']
     udpportRx = args['udpportRx']
-    
+     
     if (args['udpportTx']):
         udpportTx = args['udpportTx']
     else:
@@ -36,7 +36,7 @@ def main():
         port = args['port']
     else:
         port = 1111 
-    
+     
     if (filename):
         try: 
             fd = open(filename, "wb")
@@ -59,23 +59,23 @@ def main():
         sock352.init(udpportRx,udpportRx)
 
     s = sock352.socket()
-
+    
 
     # binding the host to empty allows reception on
     # all network interfaces
     s.bind(('',port))
     s.listen(5)
-
+    print("here")
     # when accept returns, the client is connected 
     (s2,address) = s.accept() 
-
+    print ("here1") 
     # this receives the size of the file
     # as a 4 byte integer in network byte order (big endian)
     longPacker = struct.Struct("!L")
     long = s2.recv(4)
     fn = longPacker.unpack(long)
     filelen = fn[0]
-
+    
 
     start_stamp = time.clock()
 
