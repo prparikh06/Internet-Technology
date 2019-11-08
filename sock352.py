@@ -192,19 +192,24 @@ class socket:
               if len(good_packet_list) == goal_length - 1:
                  num_to_get = header_len + nbytes - ((goal_length - 1) * MAX_PAYLOAD_SIZE)
               else:
-                         #****************FINISH**************************************************************
+                  num_to_get = header_len + MAX_PAYLOAD_SIZE
+              data_pack = self.get_packet(size=num_to_get)
+              if data_pack['flags'] != 0:
+                 print('Probably getting extra from ahndshake', data_pack['flags'])
+              elif data_pack['seq_no'] == self.my_rn:
+                   self.my_rn += data_pack['payload'])
+              self.send_packet(ack_no = self.my_rn, flags=ACK)
+              final_string = b''.join(good_packet_list)
+              return final_string;
+    def register_timeout(self):
+        with self.lock:
+            self.timeout = True
+    def recv_acks(self, goal_rn):
+        timer = time.time()
+        while self.rn < goal_rn:
         
-        
-        bytesreceived = 0     # fill in your code here
-        packets = []
-        
-        while bytesreceived < nbytes:
-            packet = self.clientsocket.recv(min(nbytes - bytesreceived, MAX_PACKET_SIZE))
-            if packet == '':
-                raise RuntimeError("Connection broken")
-            packets.append(packet)
-            bytesreceived = bytesreceived + len(packet)
-        return bytesreceived
+                        
+                          #FINISH?**************************************************************
         
 
 
