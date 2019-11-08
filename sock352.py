@@ -4,30 +4,13 @@ import socket as syssock
 import struct
 import sys
 import random
-
-
-MAX_PACKET_SIZE = 32000
-sock352PktHdrData = '!BBBBHHLLQQLL' 
-DEFAULT = 5299
+import time
+from threading import Thread, Lock
+from math import ceil
 
 
 #creating a packet "struct"
 class packet:
-    def __init__(self,version,flags,header_len,sequence_no,ack_no,window,payload_len):     #initialize te packet
-        self.version = 0x1 #should always be 0x1
-        self.flags = flags{}
-        self.opt_ptr = 0
-        self.protocol = 0
-        self.header_len = header_len
-        self.checksum = 0
-        self.soure_port = 0
-        self.dest_port = 0
-        self.sequence_no = sequence_no
-        self.ack_no = ack_no
-        self.window = 0
-        self.payload_len = payload_len
-        return   
- 
 # these functions are global to the class and
 # define the UDP ports all messages are sent
 # and received from
@@ -37,23 +20,24 @@ FIN = 0x02 #Connection End
 ACK = 0x04 #Connection Acknowledgement 
 RESET = 0x08 #Reset Connection
 HAS_OPT = 0xA0 # Option Field is valid
-
+MAX_PAYLOAD_SIZE = 32000
+header_len = 40
+packet_size = MAX_PAYLOAD_SIZE
+DEFAULT = 5299
 
 
 def init(UDPportTx,UDPportRx):   # initialize your UDP socket here 
     #global port nums
-    global portTx #transmit = client
-    global portRx #receiving = server
+    global send_port #transmit = UDPportTx
+    global recv_port #receiving = UDPportRx
 
     if int(UDPportTx) == 0:
         portTx = DEFAULT
     elif int(UDPportRx) == 0:
         portRx = DEFAULT
     else:
-        portTx = int(UDPportTx)
-        portRx = int(UDPportRx)
-    
-   
+        send_port = int(UDPportTx)
+        recv_port = int(UDPportRx)
     pass 
     
 class socket:
@@ -61,44 +45,45 @@ class socket:
         #make a UDP socket as defined in the Python library
         global mySock
         global packet
+        
+        
+        sock352PktHdrData = '!BBBBHHLLQQLL'
+        self.struct = struct.Struct(sock352PktHdrData)
         self.mySock = syssock.socket(syssock.AF_INET, syssock.SOCK_DGRAM)
-     
+        self.rn = 0
+        self.my_rn = 0
+        self.done = false
+        self.lock = Lock()
+        self.timeout = False  
+ 
         return
     
     def bind(self,address):
+        global recv_port
+        self.recv_address = (address[0], int(recv_port))
+        self.socket.bind(self.recv_address
         return 
         
     #establish the connection - 3 way handshake
-    def connect(self,address):  # fill in your code here 
-       
-        destination = address[0] #client passes in (destination,port)
-        port = address[1]
-        #assign portTx to the port number that the client passed; portRx = destination
-        portTx = port
-        portRx = destination
-        print("initiating 3 way handshake!")
-     
-        #STEP 1: send from client
-        #establish random sequence
-        
-        print("our randomly generated sequnce is: ",randSequence)
-        #initialize the packet to be sent by client
-        cPacket = self.packet
-        cPacket.sequence_no = rand.rand()
-        cPacket.flags = {SYN}
-        cPacket.ack_no = 0
-
-        #pack packet and send to addresss
-        clientPacketHeader = struct.Struct(sock352PktHdrData)
-        clientHeader = clientPacketHeader.pack(cPacket.version,cPacket.flags, cPacket.opt_ptr, 
-                    cPacket.protocol, cPacket.checksum, cPacket.soure_port,cPacket.dest_port,
-                    cPacket.sequence_no, cPacket.ack_no, cPacket.window,cPacket.payload_len)
-        
-        #sendto is inbuilt python function
-        self.mySock.sendto(clientHeader,portRx)
+    def connect(self,address):  # fill in your code here  
+        global send_port, recv_port
+        self.recv_address = (syssock.gethostname(), int(recv_port))
+        self.socket.bind(self.recv_address[0]), int(send_port))
+        self.socket.settimeout(0.2)
+        done = False
+        self.rn = randint(1,1000)
+        while not done:
+            self.send_packet(seq_no = self.rn, flags=SYN)
+            syn_ack = self.get_packet()
+            if syn_ack['flags'] == SYN | ACK:
+                done = True
+                self.my_rn = syn_ack['seq_no'] + 1
+                self.rn = syn_ack['ack_no']
+                self.send_packet(ack_no=self.my_rn, flags=ACK)
+         return
             
-    
-        return 
+        
+        #DONE UP UNTIL HERE!!!!**************************
     
     def listen(self,backlog):
         return
@@ -174,30 +159,42 @@ class socket:
         return 
 
     def send(self,buffer):  # fill in your code here 
-        #buffer = file contents
-        #bytessent should be size of what we can handle 
-        bufferIndex = len(buffer)
-        bytesent = 0
-        while bytesent < len(buffer)
-        #buffer is larger than max
-            if  bufferLen >= MAX_PACKET_SIZE:
-                #TODO send the info using sendto? --make packet that will actually get sent
-                self.mySock.sendto(buffer[bytesent: MAX_PACKET_SIZE],portRx)
-                bufferIndex -= MAX_PACKET_SIZE
-                bytesent += MAX_PACKET_SIZE
-                continue
-            else: 
-                len(buffer) <= MAX_PACKET_SIZE:    
-                self.clientsocket.send(buffer)
-                bytesent += len(buffer)       
-            
-                return bytesent 
-
-            if bufferIndex == 0
-                raise RuntimeError("Connection broken")
+        self.socket.settimeout(0.2)
+        goal = self.rn + len(buffer)
+        ack_thread = Thread(target=self.recv_acks, args=(goal,))
+        num_left = len(buffer)
+        start_rn = self.rn
+        imagined_rn = self.rn
+        ack_therad.start()
+        while ack_thread.isAlive():
+            with self.lock:
+                if self.timeout:
+                    imagined_rn = self.rn
+                    self.timeout = False
+            if imagined_rn >= goal:
+                imagined_rn = max(imagined_rn - MAX_PAYLOAD_SIZE, start_rn)
+            start_index = imagined_rn - start_rn
+            num left = goal - imagined_rn
+            end_index = start_index + min(num_left, MAX_PAYLOAD_SIZE)
+            payload = buffer[start_index : end_index]
+            self.send_packet(seq_no = imagined_rn, payload=payload)
+            imagined_rn += len(payload)
+            return len(buffer)
+        
+       #SEND FUNCTION DONE !!!!!!!!!!!!!!!!!!!! ************************************************************
     
 
     def recv(self,nbytes):
+        good_packet_list = []
+        self.socket.settimeout(None)
+        goal_length = int(ceil(float(nbytes) / MAX_PAYLOAD_SIZE)
+        while len(good_packet_list) < goal_length:
+              if len(good_packet_list) == goal_length - 1:
+                 num_to_get = header_len + nbytes - ((goal_length - 1) * MAX_PAYLOAD_SIZE)
+              else:
+                         #****************FINISH**************************************************************
+        
+        
         bytesreceived = 0     # fill in your code here
         packets = []
         
