@@ -79,7 +79,7 @@ class socket:
         
         #initialize, pack, and send the syn packet 
         initialPacket = packet(flags=SYN,header_len=header_len,sequence_no=randSeq,ack_no=0,payload_len=0)
-        initialPacketData = struct.pack(sock352PktHdrData,initialPacket.version, initialPacket.opt_ptr, initialPacket.protocol, initialPacket.header_len, initialPacket.checksum, initialPacket.source_port, initialPacket.dest_port, initialPacket.sequence_no, initialPacket.ack_no, initialPacket.window, initialPacket.payload_len)
+        initialPacketData = struct.pack(sock352PktHdrData, initialPacket.version, initialPacket.flags, initialPacket.opt_ptr, initialPacket.protocol, initialPacket.header_len, initialPacket.checksum, initialPacket.source_port, initialPacket.dest_port, initialPacket.sequence_no, initialPacket.ack_no, initialPacket.window, initialPacket.payload_len)
         self.socket.sendto(initialPacketData, self.send_addr)
 
         while not connectionComplete:
@@ -99,7 +99,7 @@ class socket:
 
                 #pack and send packet to sender addresss
 
-                syn_ack_packet_data = struct.pack(sock352PktHdrData,syn_ack_packet.version, syn_ack_packet.opt_ptr, syn_ack_packet.protocol, syn_ack_packet.header_len, syn_ack_packet.checksum, syn_ack_packet.source_port, syn_ack_packet.dest_port, syn_ack_packet.sequence_no, syn_ack_packet.ack_no, syn_ack_packet.window, syn_ack_packet.payload_len)
+                syn_ack_packet_data = struct.pack(sock352PktHdrData,syn_ack_packet.version, syn_ack_packet.flags, syn_ack_packet.opt_ptr, syn_ack_packet.protocol, syn_ack_packet.header_len, syn_ack_packet.checksum, syn_ack_packet.source_port, syn_ack_packet.dest_port, syn_ack_packet.sequence_no, syn_ack_packet.ack_no, syn_ack_packet.window, syn_ack_packet.payload_len)
 
                 self.socket.sendto(syn_ack_packet_data, self.send_addr)
             elif flags == RESET:
@@ -126,7 +126,7 @@ class socket:
                 initialPacket['ack_no'] = initialPacket['sequence_no'] + 1
             else: #pack and send the packet reset
                 initialPacket['flags'] = RESET
-                initialPacketData = struct.pack(sock352PktHdrData,initialPacket.version, initialPacket.opt_ptr, initialPacket.protocol, initialPacket.header_len, initialPacket.checksum, initialPacket.source_port, initialPacket.dest_port, initialPacket.sequence_no, initialPacket.ack_no, initialPacket.window, initialPacket.payload_len)
+                initialPacketData = struct.pack(sock352PktHdrData,initialPacket.version, initialPacket.flags, initialPacket.opt_ptr, initialPacket.protocol, initialPacket.header_len, initialPacket.checksum, initialPacket.source_port, initialPacket.dest_port, initialPacket.sequence_no, initialPacket.ack_no, initialPacket.window, initialPacket.payload_len)
                 self.socket.sendto(initialPacketData, self.send_addr)
         
         self.connected = True
