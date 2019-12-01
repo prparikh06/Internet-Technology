@@ -15,15 +15,15 @@ class packet:
 # define the UDP ports all messages are sent
 # and received from
 
-SYN = 0x01 #Connection Initiation
-FIN = 0x02 #Connection End
-ACK = 0x04 #Connection Acknowledgement 
-RESET = 0x08 #Reset Connection
-HAS_OPT = 0xA0 # Option Field is valid
-MAX_PAYLOAD_SIZE = 32000
-header_len = 40
-packet_size = MAX_PAYLOAD_SIZE
-DEFAULT = 5299
+    SYN = 0x01 #Connection Initiation
+    FIN = 0x02 #Connection End
+    ACK = 0x04 #Connection Acknowledgement 
+    RESET = 0x08 #Reset Connection
+    HAS_OPT = 0xA0 # Option Field is valid
+    MAX_PAYLOAD_SIZE = 32000
+    header_len = 40
+    packet_size = MAX_PAYLOAD_SIZE
+    DEFAULT = 5299
 
 
 def init(UDPportTx,UDPportRx):   # initialize your UDP socket here 
@@ -95,7 +95,7 @@ class socket:
                 done = True
                 self.my_rn = first_packet['seq_no'] + 1
             else:
-                self.send_packet(dest=first_packet[address'], ack_no= self.my_rn, flags=SOCK352_RESET)
+                self.send_packet(dest=first_packet['address'], ack_no= self.my_rn, flags=SOCK352_RESET)
             self.socket.settimeout(0.2)
             self.send_address = (first_packet['address'][0], int(send_port))
             done = False
