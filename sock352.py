@@ -90,30 +90,29 @@ class socket:
 
     #accept the connection
     def accept(self):
-    
-        #STEP 2: server receives SYN and sends SYN-ACK in return
-        #TODO CHECK THE STATUS/FLAGS OF THE RECEVIED PACKET - 
-        sPacket = self.recv()
-        sPacket.sequence_no = rand.rand()
-        sPacket.flags = {SYN, ACK}
-        sPacket.ack_no = sPacket.sequence_no + 1
-        #TODO send another header back to client
-
-        #STEP 3: client sends back random ACK
-        cPacket.sequence_no = sPacket.ack_no
-        cPacket.ack_no = sPacket.sequence_no + 1
-        cPacket.flags = {SYN,ACK}
-
-        #TODO accept on server side again
-        sPacket.sequence_no = 
-        sPacket.ack_no = cPacket.ack_no + 1 
-        
-        
-        #need to return (s2,address)
-        return 
-
-    
-    
+        global send_port
+        done= False
+        while not done:
+            first_packet = self.get_packet()
+            if first_packet['flags'] == SOCK352_SYN:
+                done = True
+                self.my_rn = first_packet['seq_no'] + 1
+            else:
+                self.send_packet(dest=first_packet[address'], ack_no= self.my_rn, flags=SOCK352_RESET)
+            self.socket.settimeout(0.2)
+            self.send_address = (first_packet['address'][0], int(send_port))
+            done = False
+            self.rn = randint(1,1000)
+            while not done:
+                self.send_packet(seq_no = self.rn, ack_no=self.my_rn, flags=SOCK352_SYN | SOCK352_ACK)
+                second_packet = self.get_packet()
+                if second_packet['flags'] == SOCK352_ACK and second_packet['ack_no'] == self.rn + 1:
+                    self.rn = second_packet['ack_no']
+                    done = True
+                else:
+                    self.send_packet(ack_no=self.rn, flags=SOCK352_RESET)
+        return (self,self.send_address)   
+                
     
     def close(self):   # fill in your code here 
         self.socket.settimeout(.2)
@@ -204,7 +203,7 @@ class socket:
                 
         
                         
-                          #FINISH recv acks? accept and close**************************************************************
+                          #FINISH recv acks? *************************************************************
         
 
 
