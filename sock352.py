@@ -195,7 +195,7 @@ class socket:
                 self.done = True
                 self.send_packet(ack_no=ack_pack['seq_no'] + 1, flags=SOCK352_ACK)
                 return
-            if time.time() - timer > .2:
+          #  if time.time() - timer > .2:
                 
                 
         
