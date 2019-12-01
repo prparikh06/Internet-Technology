@@ -228,7 +228,7 @@ class socket:
     
     
     def recvPacket(self):
-        (syn_ack_packet, addr) = self.socket.recvfrom(header_len)
+        syn_ack_packet = self.socket.recvfrom(header_len)[0]
         syn_ack_packet = struct.unpack(sock352PktHdrData, syn_ack_packet)
         print (syn_ack_packet) #this is a tuple that contains all the data
         newPacket = packet(syn_ack_packet[1], syn_ack_packet[5], syn_ack_packet[8], syn_ack_packet[9], syn_ack_packet[11])
