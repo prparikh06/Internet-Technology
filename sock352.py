@@ -44,7 +44,7 @@ class socket:
     def __init__(self):  # fill in your code here 
         #make a UDP socket as defined in the Python library
         self.socket = syssock.socket(syssock.AF_INET, syssock.SOCK_DGRAM)
-        self.socket.settimeout(0.2) #set the timeout 
+        #self.socket.settimeout(0.2) #set the timeout 
         self.connected = False #boolean to keep track of open connection
         self.packets = [] #list to keep track of data sent
         
