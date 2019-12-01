@@ -87,15 +87,15 @@ class socket:
             #STEP 3: recv ACK from server, send final ACK
             syn_ack_packet = self.recvPacket()  
             
-            flags = syn_ack_packet['flags']
+            flags = syn_ack_packet.flags
             
             #check flags
             if flags == SYN | ACK:
                 connectionComplete = True 
-                newSeq = syn_ack_packet['ack_no']
-                newAck = syn_ack_packet['sequence_no'] + 1
-                syn_ack_packet['sequence_no'] = newSeq
-                syn_ack_packet['ack_no'] = newAck
+                newSeq = syn_ack_packet.ack_no
+                newAck = syn_ack_packet.sequence_no + 1
+                syn_ack_packet.sequence_no = newSeq
+                syn_ack_packet.ack_no = newAck
 
                 #pack and send packet to sender addresss
 
@@ -120,12 +120,12 @@ class socket:
         while not accepted:
             initialPacket = self.recvPacket()
             #initialPacket = struct.unpack(sock352PktHdrData,initialPacketData)
-            flags = initialPacket['flags']
+            flags = initialPacket.flags
             if flags == SYN:
                 accepted = True
-                initialPacket['ack_no'] = initialPacket['sequence_no'] + 1
+                initialPacket.ack_no = initialPacket.sequence_no + 1
             else: #pack and send the packet reset
-                initialPacket['flags'] = RESET
+                initialPacket.flags = RESET
                 initialPacketData = struct.pack(sock352PktHdrData,initialPacket.version, initialPacket.flags, initialPacket.opt_ptr, initialPacket.protocol, initialPacket.header_len, initialPacket.checksum, initialPacket.source_port, initialPacket.dest_port, initialPacket.sequence_no, initialPacket.ack_no, initialPacket.window, initialPacket.payload_len)
                 self.socket.sendto(initialPacketData, self.send_addr)
         
@@ -230,24 +230,27 @@ class socket:
     def recvPacket(self):
         (syn_ack_packet, addr) = self.socket.recvfrom(header_len)
         syn_ack_packet = struct.unpack(sock352PktHdrData, syn_ack_packet)
-        print (syn_ack_packet)
-        return syn_ack_packet
+        print (syn_ack_packet) #this is a tuple that contains all the data
+        newPacket = packet(syn_ack_packet[1], syn_ack_packet[5], syn_ack_packet[8], syn_ack_packet[9], syn_ack_packet[11])
+
+        
+        return newPacket
 
 
 #creating a packet "struct"
 class packet:
     def __init__(self,flags, header_len,sequence_no,ack_no,payload_len):     #initialize the packet
-        self.version = 0x1
-        self.flags = flags
-        self.opt_ptr = 0
-        self.checksum = 0 #TODO what is this
-        self.protocol = 0
-        self.header_len = header_len
-        self.source_port = 0 
-        self.dest_port = 0
-        self.sequence_no = sequence_no
-        self.ack_no = ack_no
-        self.window = 0
-        self.payload_len = payload_len
+        self.version = 0x1 #0
+        self.flags = flags #1
+        self.opt_ptr = 0 #2
+        self.checksum = 0 #3 TODO what is this
+        self.protocol = 0 #4
+        self.header_len = header_len #5
+        self.source_port = 0 #6
+        self.dest_port = 0 #7
+        self.sequence_no = sequence_no #8
+        self.ack_no = ack_no #9
+        self.window = 0 #10
+        self.payload_len = payload_len #11
         return    
  
