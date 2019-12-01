@@ -70,7 +70,7 @@ class socket:
         self.socket.bind(self.recv_addr)
 
         print("initiating 3 way handshake!")
-        self.socket.settimeout(0.2)
+        #self.socket.settimeout(0.2)
         #STEP 1: send from client
 
         connectionComplete = False
@@ -85,7 +85,7 @@ class socket:
         while not connectionComplete:
         
             #STEP 3: recv ACK from server, send final ACK
-            syn_ack_packet = self.recvPacket()  
+            syn_ack_packet = self.recvPacket();  
             
             flags = syn_ack_packet.flags
             
