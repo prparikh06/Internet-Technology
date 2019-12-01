@@ -116,47 +116,28 @@ class socket:
     
     
     def close(self):   # fill in your code here 
-         
-       #Step 1 client sends FIN
-        cPacket = self.packet
-        cPacket.sequence_no = rand.rand()
-        cPacket.flags = {FIN}
-        cPacket.ack_no = 0
-        
-        clientPacketHeader = struct.Struct(sock352PktHdrData)
-        clientHeader = clientPacketHeader.pack(cPacket.version,cPacket.flags, cPacket.opt_ptr, 
-                    cPacket.protocol, cPacket.checksum, cPacket.soure_port,cPacket.dest_port,
-                    cPacket.sequence_no, cPacket.ack_no, cPacket.window,cPacket.payload_len)
-
-        self.mySock.sendto(clientHeader,portRx)
-       
-      #STEP 2 & 3: server receives FIN and sends FIN-ACK back
-        sPacket = self.recv()
-        sPacket.sequence_no = rand.rand()
-        sPacket.flags = {FIN, ACK}
-        sPacket.ack_no = sPacket.sequence_no + 1        
-        
-         serverHeader = udpPkt_hdr_data.pack(sPacket.version, sPacket.flags, sPacket.opt_ptr, 
-                    sPacket.protocol, sPacket.checksum, sPacket.soure_port, sPacket.dest_port,
-                    sPacket.sequence_no, sPacket.ack_no, sPacket.window, sPacket.payload_len)
-            self.mySock.sendto(serverHeader,portRx)
-
-            
-            
-        #Step 4: client sends back an ACK
-        cPacket.sequence_no = sPacket.ack_no
-        cPacket.ack_no = sPacket.sequence_no + 1
-        cPacket.flags = {ACK}
-
-        sPacket = self.recv()
-        sPacket.sequence_no = rand.rand
-        sPacket.ack_no = cPacket.ack_no + 1 
-        
-        
-        #need to return (s2,address)
-        print("Closing the connection")
-        self.mySock.close()
-        return 
+        self.socket.settimeout(.2)
+        fin_sent = False
+        while not self.done or not fin.sent:
+            self.send_packet(seq_no=self.my_rn, flags=SOCK352_FIN)
+            fin_pack = self.get_packet()
+            if fin_pack['flags'] == SOCK352_FIN:
+                self.send_packet(ack_no = fin_pack['seq_no']+1, flags=SOCK352_ACK)
+                self.done = True
+                elif fin_pack['flags'] == SOCK352_ACK and fin_pack['ack_no'] == self.my_rn + 1:
+                    fin_sent = True
+                self.socket.settimeout(1)
+                timeout = 0
+                while True:
+                    fin_pack = self.get_packet()
+                    timeout = fin_pack['payload_len']
+                    if timeout == -1:
+                        return
+                    else:
+                        if fin_pack['flags'] == SOCK352_FIN:
+                            self.send_packet(ack_no = fin_pack['seq_no'] + 1, flags=SOCK352_ACK)
+                     
+                     
 
     def send(self,buffer):  # fill in your code here 
         self.socket.settimeout(0.2)
@@ -181,7 +162,6 @@ class socket:
             imagined_rn += len(payload)
             return len(buffer)
         
-       #SEND FUNCTION DONE !!!!!!!!!!!!!!!!!!!! ************************************************************
     
 
     def recv(self,nbytes):
@@ -207,9 +187,24 @@ class socket:
     def recv_acks(self, goal_rn):
         timer = time.time()
         while self.rn < goal_rn:
+            ack_pack = self.get_packet(timeout_func=self.register_timeout)
+            if ack_pack['flags'] == SOCK352_ACK:
+                if ack_pack['ack_no'] > self.rn:
+                    with self.lock:
+                        self.rn = ack_pack['ack_no']
+                        timer = time.time()
+            elif ack_pack['flags'] == SOCK352_RESET:
+                self.send_packet(ack_no=self.my_rn, flags=SOCK352_ACK)
+            elif ack_pack['flags'] == SOCK352_FIN:
+                self.done = True
+                self.send_packet(ack_no=ack_pack['seq_no'] + 1, flags=SOCK352_ACK)
+                return
+            if time.time() - timer > .2:
+                
+                
         
                         
-                          #FINISH?**************************************************************
+                          #FINISH recv acks? accept and close**************************************************************
         
 
 
