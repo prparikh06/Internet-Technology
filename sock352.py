@@ -231,10 +231,10 @@ class socket:
         
         (data, address) = self.socket.recvfrom(header_len)
         #unpack whatever data we just received
-        recvPacket = struct.unpack(sock352PktHdrData, data)
-        
+        packet = struct.unpack(sock352PktHdrData, data)
+        print (packet.flags)
         #return the received packet
-        return recvPacket
+        return packet
 
 
 #creating a packet "struct"
