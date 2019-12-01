@@ -228,13 +228,10 @@ class socket:
     
     
     def recvPacket(self):
-        
-        (data, address) = self.socket.recvfrom(header_len)
-        #unpack whatever data we just received
-        packet = struct.unpack(sock352PktHdrData, data)
-        print (packet.flags)
-        #return the received packet
-        return packet
+        (syn_ack_packet, addr) = self.socket.recvfrom(header_len)
+        syn_ack_packet = struct.unpack(sock352PktHdrData, syn_ack_packet)
+        print (syn_ack_packet)
+        return syn_ack_packet
 
 
 #creating a packet "struct"
