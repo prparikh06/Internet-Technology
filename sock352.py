@@ -81,10 +81,7 @@ class socket:
                 self.rn = syn_ack['ack_no']
                 self.send_packet(ack_no=self.my_rn, flags=ACK)
          return
-            
-        
-        #DONE UP UNTIL HERE!!!!**************************
-    
+                
     def listen(self,backlog):
         return
 
@@ -203,7 +200,7 @@ class socket:
                 
         
                         
-                          #FINISH recv acks? *************************************************************
+                          #FINISH recv acks!!!!!!! *************************************************************
         
 
 
