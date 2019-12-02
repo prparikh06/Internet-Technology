@@ -52,7 +52,10 @@ class socket:
         return
     
     def bind(self,address):
-        return 
+        global portRx
+        self.recv_addr = (address[0], int(portRx))
+        self.socket.bind(self.recv_addr)
+        
         
     #establish the connection - 3 way handshake
     #TCP: step 1: connect - random number for sequence_no, flag = SYN, send packet to server
@@ -62,6 +65,7 @@ class socket:
 
     def connect(self,address):  # fill in your code here 
         global portRx, portTx
+        print("header len: ", header_len)
         if self.connected: #return error
             print ("Client has already connected to server")
         
@@ -70,13 +74,13 @@ class socket:
         print ("get hostname:",syssock.gethostname()) 
                 
         self.recv_addr = (syssock.gethostname(), int(portRx)) #receiving = client
-        self.send_addr = (str(destination), int(portTx)) # sending = server
+        self.send_addr = (destination, portTx) # sending = server
         
         self.socket.bind(self.recv_addr)
         print("initiating 3 way handshake!")
 
         #STEP 1: send from client
-        randSeq = random.randint(1,10000) #establish random sequence
+        randSeq = random.randint(1,100) #establish random sequence
         print ("random int: ", randSeq)
         #initialize, pack, and send the syn packet 
         initialPacket = packet(SYN,header_len,randSeq,0,0)
@@ -119,7 +123,7 @@ class socket:
         
         if flags == SYN: 
             ack_no = initialPacket.sequence_no + 1
-            randSeq = random.randint(1,10000)
+            randSeq = random.randint(1,100)
             seq_no = randSeq
             flags = SYN | ACK
             syn_ack_packet = packet(flags,header_len,seq_no,ack_no,0)
@@ -231,8 +235,8 @@ class socket:
     
     
     def recv_packet(self):
-        syn_ack_packet,addr = self.socket.recvfrom(header_len)
-        syn_ack_packet = struct.unpack(sock352PktHdrData, syn_ack_packet)
+        syn_ack_packet_data,addr = self.socket.recvfrom(header_len)
+        syn_ack_packet = struct.unpack(sock352PktHdrData, syn_ack_packet_data)
         
         newPacket = packet(syn_ack_packet[1], syn_ack_packet[5], syn_ack_packet[8], syn_ack_packet[9], syn_ack_packet[11])
         return newPacket
