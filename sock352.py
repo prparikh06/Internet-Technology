@@ -75,39 +75,44 @@ class socket:
 
         conn_complete = False
         randSeq = random.randint(1,10000) #establish random sequence
-        self.socket.settimeout(0.2)
+       
         #send packet from client 
         while not conn_complete:
-	 
-        #initialize, pack, and send the syn packet 
-            initialPacket = packet(flags=SYN,header_len=header_len,sequence_no=randSeq,ack_no=0,payload_len=0)
-            initialPacketData = struct.pack(sock352PktHdrData, initialPacket.version, initialPacket.flags, initialPacket.opt_ptr, initialPacket.protocol, initialPacket.header_len, initialPacket.checksum, initialPacket.source_port, initialPacket.dest_port, initialPacket.sequence_no, initialPacket.ack_no, initialPacket.window, initialPacket.payload_len)
-            self.socket.sendto(initialPacketData, self.send_addr)
-	
-            print ("random int: ", randSeq)
-            #STEP 3: recv ACK from server, send final ACK
-            syn_ack_packet = self.recvPacket()
-            print("hello")
-            flags = syn_ack_packet.flags
-            print(flags)
-            print("SYN:", SYN) 
-            #check flags
-            if flags == SYN | flags == ACK:
-                print("step 3")
-                connectionComplete = True 
-                newSeq = syn_ack_packet.ack_no
-                newAck = syn_ack_packet.sequence_no + 1
-                syn_ack_packet.sequence_no = newSeq
-                syn_ack_packet.ack_no = newAck
+            try:
+                self.socket.settimeout(0.5)
+                #initialize, pack, and send the syn packet 
+                initialPacket = packet(flags=SYN,header_len=header_len,sequence_no=randSeq,ack_no=0,payload_len=0)
+                initialPacketData = struct.pack(sock352PktHdrData, initialPacket.version, initialPacket.flags, initialPacket.opt_ptr, initialPacket.protocol, initialPacket.header_len, initialPacket.checksum, initialPacket.source_port, initialPacket.dest_port, initialPacket.sequence_no, initialPacket.ack_no, initialPacket.window, initialPacket.payload_len)
+                self.socket.sendto(initialPacketData, self.send_addr)
+        
+                print ("random int: ", randSeq)
+                #STEP 3: recv ACK from server, send final ACK
+                syn_ack_packet = self.recvPacket()
+                print("hello")
+                flags = syn_ack_packet.flags
+                print(flags)
+                print("SYN:", SYN) 
+                #check flags
+                if flags == SYN | flags == ACK:
+                    print("step 3")
+                    connectionComplete = True 
+                    newSeq = syn_ack_packet.ack_no
+                    newAck = syn_ack_packet.sequence_no + 1
+                    syn_ack_packet.sequence_no = newSeq
+                    syn_ack_packet.ack_no = newAck
 
-                #pack and send packet to sender addresss
+                    #pack and send packet to sender addresss
 
-                syn_ack_packet_data = struct.pack(sock352PktHdrData,syn_ack_packet.version, syn_ack_packet.flags, syn_ack_packet.opt_ptr, syn_ack_packet.protocol, syn_ack_packet.header_len, syn_ack_packet.checksum, syn_ack_packet.source_port, syn_ack_packet.dest_port, syn_ack_packet.sequence_no, syn_ack_packet.ack_no, syn_ack_packet.window, syn_ack_packet.payload_len)
+                    syn_ack_packet_data = struct.pack(sock352PktHdrData,syn_ack_packet.version, syn_ack_packet.flags, syn_ack_packet.opt_ptr, syn_ack_packet.protocol, syn_ack_packet.header_len, syn_ack_packet.checksum, syn_ack_packet.source_port, syn_ack_packet.dest_port, syn_ack_packet.sequence_no, syn_ack_packet.ack_no, syn_ack_packet.window, syn_ack_packet.payload_len)
 
-                self.socket.sendto(syn_ack_packet_data, self.send_addr)
-            elif flags == RESET:
-                print ("something went wrong so connection has been reset")
-                return
+                    self.socket.sendto(syn_ack_packet_data, self.send_addr)
+                    return
+                elif flags == RESET:
+                    print ("something went wrong so connection has been reset")
+                    return
+            except syssock.timeout:
+                print("resending")
+                continue
 
         
         print("connecting...!")
