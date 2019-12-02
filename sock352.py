@@ -85,7 +85,7 @@ class socket:
         while not connectionComplete:
 		
             #STEP 3: recv ACK from server, send final ACK
-            syn_ack_packet = self.recvPacket();  
+            syn_ack_packet = self.recvPacket()
             print("hello")
             flags = syn_ack_packet.flags
             
