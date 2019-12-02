@@ -65,7 +65,7 @@ def main():
     # all network interfaces
     s.bind(('',port))
     s.listen(5)
-    print("here")
+    
     # when accept returns, the client is connected 
     (s2,address) = s.accept() 
     print ("here1") 

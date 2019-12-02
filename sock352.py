@@ -73,24 +73,26 @@ class socket:
         #self.socket.settimeout(0.2)
         #STEP 1: send from client
 
-        connectionComplete = False
+        conn_complete = False
         randSeq = random.randint(1,10000) #establish random sequence
+        self.socket.settimeout(0.2)
         #send packet from client 
+        while not conn_complete:
 	 
         #initialize, pack, and send the syn packet 
-        initialPacket = packet(flags=SYN,header_len=header_len,sequence_no=randSeq,ack_no=0,payload_len=0)
-        initialPacketData = struct.pack(sock352PktHdrData, initialPacket.version, initialPacket.flags, initialPacket.opt_ptr, initialPacket.protocol, initialPacket.header_len, initialPacket.checksum, initialPacket.source_port, initialPacket.dest_port, initialPacket.sequence_no, initialPacket.ack_no, initialPacket.window, initialPacket.payload_len)
-        self.socket.sendto(initialPacketData, self.send_addr)
+            initialPacket = packet(flags=SYN,header_len=header_len,sequence_no=randSeq,ack_no=0,payload_len=0)
+            initialPacketData = struct.pack(sock352PktHdrData, initialPacket.version, initialPacket.flags, initialPacket.opt_ptr, initialPacket.protocol, initialPacket.header_len, initialPacket.checksum, initialPacket.source_port, initialPacket.dest_port, initialPacket.sequence_no, initialPacket.ack_no, initialPacket.window, initialPacket.payload_len)
+            self.socket.sendto(initialPacketData, self.send_addr)
 	
-        while not connectionComplete:
-		
+            print ("random int: ", randSeq)
             #STEP 3: recv ACK from server, send final ACK
             syn_ack_packet = self.recvPacket()
             print("hello")
             flags = syn_ack_packet.flags
-            
+            print(flags)
+            print("SYN:", SYN) 
             #check flags
-            if flags == SYN | ACK:
+            if flags == SYN | flags == ACK:
                 print("step 3")
                 connectionComplete = True 
                 newSeq = syn_ack_packet.ack_no
@@ -117,8 +119,10 @@ class socket:
     #accept the connection
     def accept(self):
         accepted = False
+        print("ready to accept")
         #STEP 2: server receives SYN and sends SYN-ACK in return
         while not accepted:
+            print("in accept while loop")
             initialPacket = self.recvPacket()
             #initialPacket = struct.unpack(sock352PktHdrData,initialPacketData)
             flags = initialPacket.flags
