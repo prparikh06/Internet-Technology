@@ -91,6 +91,7 @@ class socket:
             
             #check flags
             if flags == SYN | ACK:
+                print("step 3")
                 connectionComplete = True 
                 newSeq = syn_ack_packet.ack_no
                 newAck = syn_ack_packet.sequence_no + 1
@@ -121,6 +122,7 @@ class socket:
             initialPacket = self.recvPacket()
             #initialPacket = struct.unpack(sock352PktHdrData,initialPacketData)
             flags = initialPacket.flags
+            print("step 2")
             if flags == SYN:
                 accepted = True
                 initialPacket.ack_no = initialPacket.sequence_no + 1
