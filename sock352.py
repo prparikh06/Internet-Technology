@@ -76,17 +76,17 @@ class socket:
         connectionComplete = False
         randSeq = random.randint(1,10000) #establish random sequence
         #send packet from client 
-        
+	 
         #initialize, pack, and send the syn packet 
         initialPacket = packet(flags=SYN,header_len=header_len,sequence_no=randSeq,ack_no=0,payload_len=0)
         initialPacketData = struct.pack(sock352PktHdrData, initialPacket.version, initialPacket.flags, initialPacket.opt_ptr, initialPacket.protocol, initialPacket.header_len, initialPacket.checksum, initialPacket.source_port, initialPacket.dest_port, initialPacket.sequence_no, initialPacket.ack_no, initialPacket.window, initialPacket.payload_len)
         self.socket.sendto(initialPacketData, self.send_addr)
-
+	
         while not connectionComplete:
-        
+		
             #STEP 3: recv ACK from server, send final ACK
             syn_ack_packet = self.recvPacket();  
-            
+            printf("hello")
             flags = syn_ack_packet.flags
             
             #check flags
@@ -228,9 +228,9 @@ class socket:
     
     
     def recvPacket(self):
-        syn_ack_packet = self.socket.recvfrom(header_len)[0]
+        syn_ack_packet,addr = self.socket.recvfrom(40)
         syn_ack_packet = struct.unpack(sock352PktHdrData, syn_ack_packet)
-        print (syn_ack_packet) #this is a tuple that contains all the data
+        
         newPacket = packet(syn_ack_packet[1], syn_ack_packet[5], syn_ack_packet[8], syn_ack_packet[9], syn_ack_packet[11])
 
         
