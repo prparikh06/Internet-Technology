@@ -69,17 +69,18 @@ class socket:
         
         print ("get hostname:",syssock.gethostname()) 
                 
-        self.recv_addr = (syssock.gethostname(), int(portRx))
-        self.send_addr = (str(destination), int(portTx))
+        self.recv_addr = (syssock.gethostname(), int(portRx)) #receiving = client
+        self.send_addr = (str(destination), int(portTx)) # sending = server
         
         self.socket.bind(self.recv_addr)
         print("initiating 3 way handshake!")
+
         #STEP 1: send from client
         randSeq = random.randint(1,10000) #establish random sequence
         print ("random int: ", randSeq)
         #initialize, pack, and send the syn packet 
         initialPacket = packet(SYN,header_len,randSeq,0,0)
-        self.send_packet(initialPacket)
+        self.send_packet(initialPacket,self.send_addr)
 
         #STEP 3: recv ACK from server, send final ACK
         syn_ack_packet = self.recv_packet()
@@ -91,7 +92,7 @@ class socket:
             print("step 3")
             final_packet = syn_ack_packet
             final_packet.ack_no = final_packet.sequence_no + 1
-            self.send_packet(final_packet)
+            self.send_packet(final_packet, self.send_addr)
             print("should be done!!")
             
         
@@ -122,11 +123,11 @@ class socket:
             seq_no = randSeq
             flags = SYN | ACK
             syn_ack_packet = packet(flags,header_len,seq_no,ack_no,0)
-            self.send_packet(syn_ack_packet)
+            self.send_packet(syn_ack_packet,self.recv_packet)
             
         else: #pack and send the packet reset
             initialPacket.flags = RESET
-            self.send_packet(initialPacket)
+            self.send_packet(initialPacket,self.recv_packet)
             return
                  
         #STEP 3 CONTD
@@ -237,9 +238,9 @@ class socket:
         return newPacket
     
     
-    def send_packet(self,packetToSend):
+    def send_packet(self,packetToSend, address):
         packetToSendData = struct.pack(sock352PktHdrData,packetToSend.version, packetToSend.flags, packetToSend.opt_ptr, packetToSend.protocol, packetToSend.header_len, packetToSend.checksum, packetToSend.source_port, packetToSend.dest_port, packetToSend.sequence_no, packetToSend.ack_no, packetToSend.window, packetToSend.payload_len)
-        self.socket.sendto(packetToSendData, self.send_addr)
+        self.socket.sendto(packetToSendData, address)
         return
 
 
