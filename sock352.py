@@ -89,13 +89,13 @@ class socket:
                 #STEP 3: recv ACK from server, send final ACK
                 syn_ack_packet = self.recvPacket()
                 print("hello")
-                flags = syn_ack_packet.flags
-                print(flags)
+                flag = syn_ack_packet.flags
+                print(flag)
                 print("SYN:", SYN) 
                 #check flags
-                if flags == SYN | flags == ACK:
+                if flag == SYN | ACK:
                     print("step 3")
-                    connectionComplete = True 
+                    conn_complete = True 
                     newSeq = syn_ack_packet.ack_no
                     newAck = syn_ack_packet.sequence_no + 1
                     syn_ack_packet.sequence_no = newSeq
@@ -107,7 +107,7 @@ class socket:
 
                     self.socket.sendto(syn_ack_packet_data, self.send_addr)
                     return
-                elif flags == RESET:
+                elif flag == RESET:
                     print ("something went wrong so connection has been reset")
                     return
             except syssock.timeout:
