@@ -36,8 +36,8 @@ def init(UDPportTx,UDPportRx):   # initialize your UDP socket here
     else:
         portTx = int(UDPportTx)
         portRx = int(UDPportRx)
-    
-   
+
+    print("portTx = sending port: ", portTx)   
     pass 
     
 class socket:
@@ -57,15 +57,16 @@ class socket:
     #NOTE: address is of type in form {destination IP, port} that client passes in
 
     def connect(self,address):  # fill in your code here 
+        global portRx, portTx
         if self.connected: #return error
             print ("Client has already connected to server")
         
         destination = address[0] 
-        port = address[1]
         
-        #TODO cast ? str or int        
-        self.recv_addr = (destination, portRx)
-        self.send_addr = (destination, portTx)
+        print ("get hostname:",syssock.gethostname()) 
+                
+        self.recv_addr = (syssock.gethostname(), int(portRx))
+        self.send_addr = (str(destination), int(portTx))
         
         self.socket.bind(self.recv_addr)
 
@@ -123,7 +124,9 @@ class socket:
 
     #accept the connection
     def accept(self):
-        accepted = False
+        global portTx
+	#accepted = False
+
         print("ready to accept")
         #STEP 2: server receives SYN and sends SYN-ACK in return
         # while not accepted:
@@ -140,6 +143,15 @@ class socket:
             initialPacketData = struct.pack(sock352PktHdrData,initialPacket.version, initialPacket.flags, initialPacket.opt_ptr, initialPacket.protocol, initialPacket.header_len, initialPacket.checksum, initialPacket.source_port, initialPacket.dest_port, initialPacket.sequence_no, initialPacket.ack_no, initialPacket.window, initialPacket.payload_len)
             self.socket.sendto(initialPacketData, self.send_addr)
         
+        randSeq = random.randint(1,1000)
+        initialPacket.seq_no = randSeq
+        initialPacket.flags=SYN | ACK
+         
+        initialPacketData = struct.pack(sock352PktHdrData,initialPacket.version, initialPacket.flags, initialPacket.opt_ptr, initialPacket.protocol, initialPacket.header_len, initialPacket.checksum, initialPacket.source_port, initialPacket.dest_port, initialPacket.sequence_no, initialPacket.ack_no, initialPacket.window, initialPacket.payload_len)
+        self.socket.sendto(initialPacketData, self.send_addr)
+        
+	
+
         self.connected = True
 
         print ("Accepted!")
