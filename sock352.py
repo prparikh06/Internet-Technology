@@ -38,7 +38,7 @@ def init(UDPportTx,UDPportRx):   # initialize your UDP socket here
         portTx = int(UDPportTx)
         portRx = int(UDPportRx)
 
-    print("portTx = sending port: ", portTx)   
+    print("portTx = sending port: ", portTx, "portRx = receiving port: ", portRx)   
     pass 
     
 class socket:
@@ -83,7 +83,7 @@ class socket:
         self.send_packet(initialPacket,self.send_addr)
 
         #STEP 3: recv ACK from server, send final ACK
-        syn_ack_packet = self.recv_packet()
+        syn_ack_packet, addr = self.recv_packet()
         print("recvd syn_ack")
         flags = syn_ack_packet.flags
         print(flags)
@@ -112,9 +112,9 @@ class socket:
 
         print("ready to accept")
         #STEP 2: server receives SYN and sends SYN-ACK in return    
-        initialPacket = self.recv_packet()
+        initialPacket, addr = self.recv_packet()
         flags = initialPacket.flags
-
+        self.send_addr = (addr[0], int(portTx))
         print(flags)
         
         if flags == SYN: 
@@ -123,15 +123,16 @@ class socket:
             seq_no = randSeq
             flags = SYN | ACK
             syn_ack_packet = packet(flags,header_len,seq_no,ack_no,0)
-            self.send_packet(syn_ack_packet,self.recv_packet)
+            
+            self.send_packet(syn_ack_packet,self.send_addr)
             
         else: #pack and send the packet reset
             initialPacket.flags = RESET
-            self.send_packet(initialPacket,self.recv_packet)
+            self.send_packet(initialPacket,self.send_addr)
             return
                  
         #STEP 3 CONTD
-        final_packet = self.recv_packet()
+        final_packet, addr = self.recv_packet()
         
         self.connected = True
 
@@ -235,7 +236,7 @@ class socket:
         syn_ack_packet = struct.unpack(sock352PktHdrData, syn_ack_packet)
         
         newPacket = packet(syn_ack_packet[1], syn_ack_packet[5], syn_ack_packet[8], syn_ack_packet[9], syn_ack_packet[11])
-        return newPacket
+        return (newPacket, addr)
     
     
     def send_packet(self,packetToSend, address):
