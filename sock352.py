@@ -234,7 +234,7 @@ class socket:
         syn_ack_packet = struct.unpack(sock352PktHdrData, syn_ack_packet)
         
         newPacket = packet(syn_ack_packet[1], syn_ack_packet[5], syn_ack_packet[8], syn_ack_packet[9], syn_ack_packet[11])
-        print (newPacket.flags)
+
         
         return newPacket
 
