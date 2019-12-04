@@ -6,10 +6,10 @@ import random
 import time
 
 
-MAX_PACKET_SIZE = 32000
 sock352PktHdrData = '!BBBBHHLLQQLL' 
 DEFAULT = 5299
 header_len = struct.calcsize(sock352PktHdrData)
+MAX_PACKET_SIZE = 32000 + header_len
 
 
 
@@ -49,6 +49,7 @@ class socket:
         self.socket = syssock.socket(syssock.AF_INET, syssock.SOCK_DGRAM)
         #self.socket.settimeout(0.2) #set the timeout 
         self.connected = False #boolean to keep track of open connection
+        self.closed = False
         self.packets = [] #list to keep track of data sent
         
         return
@@ -93,6 +94,7 @@ class socket:
         print("recvd syn_ack")
         flags = syn_ack_packet.flags
         print(flags)
+
         #check flags
         if flags == SYN | ACK:
             print("step 3")
@@ -139,52 +141,64 @@ class socket:
                  
         #STEP 3 CONTD
         final_packet, addr = self.recv_packet()
-        
-        self.connected = True
 
+        self.connected = True
         print ("Accepted!")
        
         return (self, self.send_addr) 
 
+
+    #TCP Close = 2 double handshakes!
+    #Step 1: client sends FIN flag to server. random sequence number
+    #Step 2: server receives; flag = ACK; ack_no = seq + 1 to client
+    #Step 3: again, server sends. FIN flag is set, seq = another random
+    #Step 4: client recvs and sends, ack = seq + 1; ACK flag
+    
     def close(self):   # fill in your code here
         
-    #    #Step 1 client sends FIN
-    #     cPacket = packet()
-    #     cPacket.sequence_no = rand.rand()
-    #     cPacket.flags = {FIN}
-    #     cPacket.ack_no = 0 #TODO
-    #     cPacket.payload_len = 0 #TODO
+        #Step 1 client sends FIN
+        randSeq = random.randint(1,100) #establish random sequence
+        print ("random int: ", randSeq)
+        #initialize, pack, and send the syn packet 
+        initialPacket = packet(FIN,header_len,randSeq,0,0)
+        self.send_packet(initialPacket,self.send_addr)
 
-    #     clientPacketHeader = struct.Struct(sock352PktHdrData)
-    #     clientHeader = clientPacketHeader.pack(cPacket.version,cPacket.flags, cPacket.sequence_no, cPacket.ack_no, cPacket.payload_len)
+   
+        #Step 2 recv packet and update
+        initialPacket, addr = self.recv_packet()
+        flags = initialPacket.flags
+        self.send_addr = (addr[0], int(portTx))
+        print(flags)
         
-    #     self.mySock.sendto(clientHeader,portRx)
-
-    #   #STEP 2 & 3: server receives FIN and sends FIN-ACK back
-    #     (sPacket, address) = self.recvfrom()
-    #     sPacket.sequence_no = rand.rand()
-    #     sPacket.flags = {FIN, ACK}
-    #     sPacket.ack_no = sPacket.sequence_no + 1
-    #     sPacket.payload_len = 0 #TODO
-
-    #     serverHeader = sock352PktHdrData.pack(sPacket.flags, sPacket.sequence_no, sPacket.ack_no,cPacket.payload_len)
-    #     self.mySock.sendto(serverHeader,portTx)
-
-
-    #     #Step 4: client sends back an ACK
-    #     cPacket.sequence_no = sPacket.ack_no
-    #     cPacket.ack_no = sPacket.sequence_no + 1
-    #     cPacket.flags = {ACK}
-
-    #     (sPacket, address) = self.recvACK()
-    #     sPacket.sequence_no = rand.rand()
-    #     sPacket.ack_no = cPacket.ack_no + 1
-
-
-    #     #need to return (s2,address)
-    #     print("Closing the connection")
+        if flags == FIN: 
+            ack_no = initialPacket.sequence_no + 1
+            randSeq = random.randint(1,100)
+            seq_no = randSeq
+            flags = ACK
+            fin_packet = packet(flags,header_len,seq_no,ack_no,0)
+            self.send_packet(fin_packet,self.send_addr)
+        elif flags == ACK:
+            self.closed = True    
         
-    #     self.mySock.close()
+        #Step 3
+        fin_pack, addr = self.recv_packet()
+        flags = fin_pack.flags
+        #send final FIN
+        if flags == FIN:
+            #Step 4
+            seq_no = random.randint(1,100)
+            flags = ACK
+            ack_no = fin_pack.sequence_no + 1
+            fin_packet = packet(flags,header_len,seq_no,ack_no,0)
+            self.send_packet(fin_packet, self.send_addr)
+
+        #else: #take care of this    
+        self.closed = True
+        #STEP 2 & 3: server receives FIN and sends FIN-ACK back
+      
+        print("Connection closed!!!")
+        
+    #     self.socket.close()
         return  
 
     def send(self,buffer):  # fill in your code here 

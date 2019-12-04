@@ -74,16 +74,18 @@ def main():
 
     start_stamp = time.clock()    
 
-    file_contents = fd.read()
+    #TODO UNCOMMENT THIS
 
-    totalsent = 0
-    # make sure we sent the whole fragment 
+    # file_contents = fd.read()
 
-    totalsent = s.send(file_contents)
-    if (totalsent == 0):
-        raise RuntimeError("socket broken")    
-    end_stamp = time.clock() 
-    lapsed_seconds = end_stamp - start_stamp
+    # totalsent = 0
+    # # make sure we sent the whole fragment 
+
+    # totalsent = s.send(file_contents)
+    # if (totalsent == 0):
+    #     raise RuntimeError("socket broken")    
+    # end_stamp = time.clock() 
+    # lapsed_seconds = end_stamp - start_stamp
     
 
 

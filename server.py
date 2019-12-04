@@ -71,16 +71,20 @@ def main():
     print ("here1") 
     # this receives the size of the file
     # as a 4 byte integer in network byte order (big endian)
-    longPacker = struct.Struct("!L")
-    long = s2.recv(4)
-    fn = longPacker.unpack(long)
-    filelen = fn[0]
+    
+    #TODO UNCOMMENT THIS
+    # longPacker = struct.Struct("!L")
+    
+    
+    # long = s2.recv(4)
+    # fn = longPacker.unpack(long)
+    # filelen = fn[0]
     
 
-    start_stamp = time.clock()
+    # start_stamp = time.clock()
 
 
-    file = s2.recv(filelen)
+    # file = s2.recv(filelen)
 
     fd.write(file)
 
