@@ -4,7 +4,7 @@ import struct
 import sys
 import random
 import time
-
+import thread
 
 sock352PktHdrData = '!BBBBHHLLQQLL' 
 DEFAULT = 5299
@@ -49,8 +49,9 @@ class socket:
         self.connected = False #boolean to keep track of open connection
         self.closed = False
         self.packets = [] #list to keep track of data sent
-        self.ack = -1 #keeps track of most recent ack
-        self.seq = -1 #keeps track of most recent seq
+        self.ack = 0 #keeps track of most recent ack
+        self.seq = 0 #keeps track of most recent seq 
+	#both have to be 0 since ther are of type Q in header file (unsigned)
         return
     
     def bind(self,address):
@@ -99,7 +100,7 @@ class socket:
             print("step 3")
             final_packet = syn_ack_packet
             final_packet.ack_no = final_packet.sequence_no + 1
-            final_packet_flags = ACK
+            final_packet.flags = ACK
             self.send_packet(final_packet, self.send_addr)
             print("should be done!!")
             
@@ -128,6 +129,7 @@ class socket:
         if flags == SYN: 
             ack_no = initialPacket.sequence_no + 1
             randSeq = random.randint(1,100)
+            self.seq = randSeq
             seq_no = randSeq
             flags = SYN | ACK
             syn_ack_packet = packet(flags,header_len,seq_no,ack_no,0)
@@ -137,38 +139,37 @@ class socket:
         else: #pack and send the packet reset
             initialPacket.flags = RESET
             self.send_packet(initialPacket,self.send_addr)
-            return
+            #return
                  
         #STEP 3 CONTD
         final_packet, addr = self.recv_packet()
         flags = final_packet.flags
         if flags == ACK:
-	        self.connected = True
-        	print ("Accepted!")
-		    self.ack = final_packet.seq_no + 1
-            self.seq = final_packet.ack_no
+            self.connected = True
+            print ("Accepted!")
+            
+            self.ack = final_packet.ack_no
         else:
 		#reset
             final_packet.flags = RESET
             self.send_packet(final_packet, self.send_addr)
-	
-	
+            #return	
+        print("after connection:self.seq =",self.seq,"self.ack =", self.ack)
         return (self, self.send_addr) 
 
 
     #TCP Close = 2 double handshakes!
-    #Step 1: client sends FIN flag to server. random sequence number
+    #Step 1: client sends FIN flag to server. use most recent sequence number
     #Step 2: server receives; flag = ACK; ack_no = seq + 1 to client
-    #Step 3: again, server sends. FIN flag is set, seq = another random
+    #Step 3: again, server sends. FIN flag is set, 
     #Step 4: client recvs and sends, ack = seq + 1; ACK flag
     
     def close(self):   # fill in your code here
         
         #Step 1 client sends FIN
-        randSeq = random.randint(1,100) #establish random sequence
-        print ("random int: ", randSeq)
-        #initialize, pack, and send the syn packet 
-        initialPacket = packet(FIN,header_len,randSeq,0,0)
+        print("current self.seq: ", self.seq) 
+        #initialize, pack, and send the fin packet 
+        initialPacket = packet(FIN,header_len,self.seq,0,0)
         self.send_packet(initialPacket,self.send_addr)
 
    
@@ -180,10 +181,8 @@ class socket:
         
         if flags == FIN: 
             ack_no = initialPacket.sequence_no + 1
-            randSeq = random.randint(1,100)
-            seq_no = randSeq
             flags = ACK
-            fin_packet = packet(flags,header_len,seq_no,ack_no,0)
+            fin_packet = packet(flags,header_len,self.seq,ack_no,0)
             self.send_packet(fin_packet,self.send_addr)
         elif flags == ACK:
             self.closed = True    
@@ -194,10 +193,9 @@ class socket:
         #send final FIN
         if flags == FIN:
             #Step 4
-            seq_no = random.randint(1,100)
             flags = ACK
             ack_no = fin_pack.sequence_no + 1
-            fin_packet = packet(flags,header_len,seq_no,ack_no,0)
+            fin_packet = packet(flags,header_len,self.seq,ack_no,0)
             self.send_packet(fin_packet, self.send_addr)
 
         #else: #take care of this    
@@ -210,22 +208,44 @@ class socket:
         return  
 
     def send(self,buffer):  # fill in your code here 
-        #theory: in send, have a new thread for each packet we're going to send
+        if not self.connected:
+            print("client has not connected with socket:(")
+            return
+        elif self.closed:
+            print("connection has already been closed")
+            return
+
+	#theory: in send, have a new thread for each packet we're going to send
         #buffer = file contents #bytessent should be size of what we can handle 
         print("sending has begun!!!")
         bufferIndex = 0 #tells where in the buffer we are
         bufferSize = len(buffer) 
+        if bufferSize < 0: 
+            print ("file size is invalid")
+            return 
+        else:
+            print("buffer len:", bufferSize)
+	#my_thread = Thread(
+	
         bytesSent = 0
         bytesLeft = bufferSize 
-        #while bytesSent < bufferSize: #while we still have bytes to send...
-        		
-
-
+	#create thread to make sure all acks are received 
+        gbn_thread = theading.Thread(target=recv_ACK, args=(self.ack+bufferSize)) #target = which function,args = args to that function)        
+	gbn_thread.start()
+        while bytesSent < bufferSize: #while we still have bytes to send...
+            bufferIndex = bytesSent + MAX_PACKET_SIZE
+            #TODO
+            print("currently sending ", currPacketSize," bytes")
+            #use send_packet function again, but now we update payload
+            payload_len = c
+        
+            #update bytessent
+            bytesSent +=payload_len
       #     try:
                          
         #     except syssock.timeout:
         #         pass
-        return bytessent 
+        return bytesSent 
     
 
     def recv(self,nbytes):
@@ -242,6 +262,11 @@ class socket:
         #         pass
         return bytesreceived
     
+    def recv_ACK(self,ack_no):
+    
+
+
+
     
     def recv_packet(self):
         syn_ack_packet_data,addr = self.socket.recvfrom(header_len)

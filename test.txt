@@ -1,0 +1,2 @@
+self.my_rn = seq
+self.rn = ack
