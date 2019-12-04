@@ -84,16 +84,16 @@ def main():
     # totalsent = s.send(file_contents)
     # if (totalsent == 0):
     #     raise RuntimeError("socket broken")    
-    # end_stamp = time.clock() 
-    # lapsed_seconds = end_stamp - start_stamp
+    end_stamp = time.clock()
+    lapsed_seconds = end_stamp - start_stamp
     
 
 
-    if (lapsed_seconds > 0.0):
-        print ("client1: sent %d bytes in %0.6f seconds, %0.6f MB/s " % (filesize, lapsed_seconds,
-(filesize/lapsed_seconds)/(1024*1024)))
-    else:
-        print ("client1: sent %d bytes in %d seconds, inf MB/s " % (filesize, lapsed_seconds))        
+    # if (lapsed_seconds > 0.0):
+        # print ("client1: sent %d bytes in %0.6f seconds, %0.6f MB/s " % (filesize, lapsed_seconds,
+# (filesize/lapsed_seconds)/(1024*1024)))
+    # else:
+        # print ("client1: sent %d bytes in %d seconds, inf MB/s " % (filesize, lapsed_seconds))        
 
     fd.close()
     s.close()
