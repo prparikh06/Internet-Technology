@@ -64,17 +64,18 @@ def main():
     s = sock352.socket()
     s.connect((destination,port))
     
-
-    longPacker = struct.Struct("!L")
-    fileLenPacked = longPacker.pack(filesize)
-    s.send(fileLenPacked)
-
-
-    bytes_to_send = filesize
-
-    start_stamp = time.clock()    
-
     #TODO UNCOMMENT THIS
+
+
+    # longPacker = struct.Struct("!L")
+    # fileLenPacked = longPacker.pack(filesize)
+    # s.send(fileLenPacked)
+
+
+    # bytes_to_send = filesize
+
+    # start_stamp = time.clock()    
+
 
     # file_contents = fd.read()
 
@@ -84,8 +85,8 @@ def main():
     # totalsent = s.send(file_contents)
     # if (totalsent == 0):
     #     raise RuntimeError("socket broken")    
-    end_stamp = time.clock()
-    lapsed_seconds = end_stamp - start_stamp
+    # end_stamp = time.clock()
+    # lapsed_seconds = end_stamp - start_stamp
     
 
 

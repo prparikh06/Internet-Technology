@@ -81,7 +81,7 @@ def main():
     # filelen = fn[0]
     
 
-    start_stamp = time.clock()
+    #start_stamp = time.clock()
 
 
     # file = s2.recv(filelen)

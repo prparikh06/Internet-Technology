@@ -81,34 +81,37 @@ class socket:
         
         self.socket.bind(self.recv_addr)
         print("initiating 3 way handshake!")
-
+        self.socket.settimeout(0.2)
         #STEP 1: send from client
         randSeq = random.randint(1,100) #establish random sequence
         print ("random int: ", randSeq)
-        #initialize, pack, and send the syn packet 
-        initialPacket = packet(SYN,header_len,randSeq,0,0)
-        self.send_packet(initialPacket,self.send_addr)
+        #initialize, pack, and send the syn packet - use while loop 
+        connected = False
+        while not connected:
+            initialPacket = packet(SYN,header_len,randSeq,0,0)
+            self.send_packet(initialPacket,self.send_addr)
 
-        #STEP 3: recv ACK from server, send final ACK
-        syn_ack_packet, addr = self.recv_packet()
-        print("recvd syn_ack")
-        flags = syn_ack_packet.flags
-        print(flags)
+            #STEP 3: recv ACK from server, send final ACK
+            syn_ack_packet, addr = self.recv_packet()
+            print("recvd syn_ack")
+            flags = syn_ack_packet.flags
+            print(flags)
 
-        #check flags
-        if flags == SYN | ACK:
-            print("step 3")
-            final_packet = syn_ack_packet
-            final_packet.ack_no = final_packet.sequence_no + 1
-            final_packet.flags = ACK
-            self.send_packet(final_packet, self.send_addr)
-            print("should be done!!")
+            #check flags
+            if flags == SYN | ACK:
+                print("step 3")
+                final_packet = syn_ack_packet
+                final_packet.ack_no = final_packet.sequence_no + 1
+                final_packet.flags = ACK
+                self.send_packet(final_packet, self.send_addr)
+                print("should be done!!")
+                connected = True
+
             
-        
-        elif flags == RESET:
-            print ("something went wrong so connection has been reset")
-            return
-        
+            else:
+                print ("something went wrong so returned")
+                return
+            
         print("connecting...!")
         self.connected = True
         return 
@@ -119,43 +122,51 @@ class socket:
     #accept the connection
     def accept(self):
         global portTx
-
         print("ready to accept")
-        #STEP 2: server receives SYN and sends SYN-ACK in return    
-        initialPacket, addr = self.recv_packet()
-        flags = initialPacket.flags
-        self.send_addr = (addr[0], int(portTx))
-        print(flags)
-        
-        if flags == SYN: 
-            ack_no = initialPacket.sequence_no + 1
-            randSeq = random.randint(1,100)
-            self.seq = randSeq
-            seq_no = randSeq
-            flags = SYN | ACK
-            syn_ack_packet = packet(flags,header_len,seq_no,ack_no,0)
+        get_first_packet = False
+        #STEP 2: server receives SYN and sends SYN-ACK in return   
+        while not get_first_packet:
             
-            self.send_packet(syn_ack_packet,self.send_addr)
+            initialPacket, addr = self.recv_packet()
+            flags = initialPacket.flags
+            self.send_addr = (addr[0], int(portTx))
+            print(flags)
             
-        else: #pack and send the packet reset
-            initialPacket.flags = RESET
-            self.send_packet(initialPacket,self.send_addr)
-            #return
-                 
+            if flags == SYN: 
+                get_first_packet = True
+
+            else: #pack and send the packet reset
+                initialPacket.flags = RESET
+                self.send_packet(initialPacket,self.send_addr)
+                #return
+        self.socket.settimeout(0.2)
+        ack_no = initialPacket.sequence_no + 1
+        randSeq = random.randint(1,100)
+        self.seq = randSeq
+        seq_no = randSeq
+        flags = SYN | ACK
+        syn_ack_packet = packet(flags,header_len,seq_no,ack_no,0)
+        self.send_packet(syn_ack_packet,self.send_addr)
+        #Step 2 finished    
+
         #STEP 3 CONTD
-        final_packet, addr = self.recv_packet()
-        flags = final_packet.flags
-        if flags == ACK:
-            self.connected = True
-            print ("Accepted!")
-            self.connected = True 
-            self.ack = final_packet.ack_no
-        else:
-		#reset
-            final_packet.flags = RESET
-            self.send_packet(final_packet, self.send_addr)
-            #return	
+        accepted = False
+        while not accepted:
+            final_packet, addr = self.recv_packet()
+            flags = final_packet.flags
+            if flags == ACK:
+                self.connected = True
+                print ("Accepted!")
+                self.ack = final_packet.ack_no
+                accepted = True
+            else:
+            #reset
+                final_packet.flags = RESET
+                self.send_packet(final_packet, self.send_addr)
+                #return	
         print("after connection:self.seq =",self.seq,"self.ack =", self.ack)
+        self.connected = True 
+
         return (self, self.send_addr) 
 
 
@@ -166,41 +177,51 @@ class socket:
     #Step 4: client recvs and sends, ack = seq + 1; ACK flag
     
     def close(self):   # fill in your code here
-        
-        #Step 1 client sends FIN
-        print("current self.seq: ", self.seq) 
-        #initialize, pack, and send the fin packet 
-        initialPacket = packet(FIN,header_len,self.seq,0,0)
-        self.send_packet(initialPacket,self.send_addr)
+        self.socket.settimeout(0.2)
+        fin = False
+        while not fin or not self.closed: 
+            #Step 1 client sends FIN
+            print("current self.seq: ", self.seq) 
+            #initialize, pack, and send the fin packet 
+            initialPacket = packet(FIN,header_len,self.seq,0,0)
+            self.send_packet(initialPacket,self.send_addr)
 
-   
-        #Step 2 recv packet and update
-        initialPacket, addr = self.recv_packet()
-        flags = initialPacket.flags
-        self.send_addr = (addr[0], int(portTx))
-        print(flags)
+    
+            #Step 2 recv packet and update
+            initialPacket, addr = self.recv_packet()
+            flags = initialPacket.flags
+            self.send_addr = (addr[0], int(portTx))
+            print(flags)
+            
+            if flags == FIN: 
+                ack_no = initialPacket.sequence_no + 1
+                flags = ACK
+                fin_packet = packet(flags,header_len,self.seq,ack_no,0)
+                self.send_packet(fin_packet,self.send_addr)
+                self.closed = True
+            elif flags == ACK and fin_packet.ack_no == self.seq + 1:
+                fin = True    
+
         
-        if flags == FIN: 
-            ack_no = initialPacket.sequence_no + 1
-            flags = ACK
-            fin_packet = packet(flags,header_len,self.seq,ack_no,0)
-            self.send_packet(fin_packet,self.send_addr)
-        elif flags == ACK:
-            self.closed = True    
+        self.socket.settimeout(1)  
         
         #Step 3
-        fin_pack, addr = self.recv_packet()
-        flags = fin_pack.flags
-        #send final FIN
-        if flags == FIN:
-            #Step 4
-            flags = ACK
-            ack_no = fin_pack.sequence_no + 1
-            fin_packet = packet(flags,header_len,self.seq,ack_no,0)
-            self.send_packet(fin_packet, self.send_addr)
+        while True:
+            fin_pack, addr = self.recv_packet()
+            payload = fin_pack.payload_len
+            if payload >= 0: #good
+                return
+            #resend final FIN
+            else: 
+                #Step 4
+                flags = ACK
+                ack_no = fin_pack.sequence_no + 1
+                fin_packet = packet(flags,header_len,self.seq,ack_no,0)
+                self.send_packet(fin_packet, self.send_addr)
 
-        #else: #take care of this    
+           
         self.closed = True
+
         #STEP 2 & 3: server receives FIN and sends FIN-ACK back
       
         print("Connection closed!!!")
