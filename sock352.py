@@ -99,7 +99,7 @@ class socket:
             print("step 3")
             final_packet = syn_ack_packet
             final_packet.ack_no = final_packet.sequence_no + 1
-	    final_packet_flags = ACK
+            final_packet_flags = ACK
             self.send_packet(final_packet, self.send_addr)
             print("should be done!!")
             
@@ -141,16 +141,16 @@ class socket:
                  
         #STEP 3 CONTD
         final_packet, addr = self.recv_packet()
-	flags = final_packet.flags
-	if flags == ACK:
+        flags = final_packet.flags
+        if flags == ACK:
 	        self.connected = True
         	print ("Accepted!")
-		self.ack = final_packet.seq_no + 1
-		self.seq = final_packet.ack_no
+		    self.ack = final_packet.seq_no + 1
+            self.seq = final_packet.ack_no
         else:
 		#reset
-		final_packet.flags = RESET
-		self.send_packet(final_packet, self.send_addr)
+            final_packet.flags = RESET
+            self.send_packet(final_packet, self.send_addr)
 	
 	
         return (self, self.send_addr) 
@@ -211,15 +211,14 @@ class socket:
 
     def send(self,buffer):  # fill in your code here 
         #theory: in send, have a new thread for each packet we're going to send
-	#buffer = file contents #bytessent should be size of what we can handle 
-	print("sending has begun!!!")
-	bufferIndex = 0 #tells where in the buffer we are
-	bufferSize = len(buffer) 
-	bytesSent = 0
-	bytesLeft = bufferSize 
-	while bytesSent < bufferSize: #while we still have bytes to send...
-		length 
-			
+        #buffer = file contents #bytessent should be size of what we can handle 
+        print("sending has begun!!!")
+        bufferIndex = 0 #tells where in the buffer we are
+        bufferSize = len(buffer) 
+        bytesSent = 0
+        bytesLeft = bufferSize 
+        #while bytesSent < bufferSize: #while we still have bytes to send...
+        		
 
 
       #     try:
