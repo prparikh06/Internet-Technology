@@ -23,8 +23,6 @@ ACK = 0x04 #Connection Acknowledgement
 RESET = 0x08 #Reset Connection
 HAS_OPT = 0xA0 # Option Field is valid
 
-
-
 def init(UDPportTx,UDPportRx):   # initialize your UDP socket here 
     #global port nums
     global portTx #transmit = client
@@ -51,7 +49,8 @@ class socket:
         self.connected = False #boolean to keep track of open connection
         self.closed = False
         self.packets = [] #list to keep track of data sent
-        
+        self.ack = -1 #keeps track of most recent ack
+        self.seq = -1 #keeps track of most recent seq
         return
     
     def bind(self,address):
@@ -100,6 +99,7 @@ class socket:
             print("step 3")
             final_packet = syn_ack_packet
             final_packet.ack_no = final_packet.sequence_no + 1
+	    final_packet_flags = ACK
             self.send_packet(final_packet, self.send_addr)
             print("should be done!!")
             
@@ -141,10 +141,18 @@ class socket:
                  
         #STEP 3 CONTD
         final_packet, addr = self.recv_packet()
-
-        self.connected = True
-        print ("Accepted!")
-       
+	flags = final_packet.flags
+	if flags == ACK:
+	        self.connected = True
+        	print ("Accepted!")
+		self.ack = final_packet.seq_no + 1
+		self.seq = final_packet.ack_no
+        else:
+		#reset
+		final_packet.flags = RESET
+		self.send_packet(final_packet, self.send_addr)
+	
+	
         return (self, self.send_addr) 
 
 
@@ -202,35 +210,20 @@ class socket:
         return  
 
     def send(self,buffer):  # fill in your code here 
-        #buffer = file contents
-        #bytessent should be size of what we can handle 
-        bufferIndex = len(buffer)
-        bytessent = 0
-        # packetIndex = 0
-        # while bytessent < bufferIndex:
-        # #buffer is larger than max
-        #     try:
-                
-        #         #TODO send the info using sendto? --make packet that will actually get sent
-        #         if (packetIndex == 0): #first packet getting sent
-        #             self.mySock.sendto(buffer[bytessent: MAX_PACKET_SIZE],portRx)
-        #             bufferIndex -= MAX_PACKET_SIZE
-        #             bytessent += MAX_PACKET_SIZE
-        #             continue
+        #theory: in send, have a new thread for each packet we're going to send
+	#buffer = file contents #bytessent should be size of what we can handle 
+	print("sending has begun!!!")
+	bufferIndex = 0 #tells where in the buffer we are
+	bufferSize = len(buffer) 
+	bytesSent = 0
+	bytesLeft = bufferSize 
+	while bytesSent < bufferSize: #while we still have bytes to send...
+		length 
+			
 
-        #         if (packetIndex > 0): #not the first packet
-        #             #check for GBN
-        #             if (packets[packetIndex-1] == None): #TODO #if there was no packet recvd before it/aka not been sent properly
-        #                 #do go back n ? send everything again? recursively redo
-        #                 packets.clear()
-        #                 socket.send(self,buffer)
-                            
-        #             else: 
-        #                 self.mySock.sendto(buffer[bytessent: MAX_PACKET_SIZE],portRx)
-        #                 bufferIndex -= MAX_PACKET_SIZE
-        #                 bytessent += MAX_PACKET_SIZE
-        #             continue
-                          
+
+      #     try:
+                         
         #     except syssock.timeout:
         #         pass
         return bytessent 
