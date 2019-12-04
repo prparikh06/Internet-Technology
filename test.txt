@@ -1,2 +1,7 @@
 self.my_rn = seq
 self.rn = ack
+
+
+in send: 
+	imagined_rn = curr_ack
+	start_rn = first_ack

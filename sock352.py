@@ -4,12 +4,12 @@ import struct
 import sys
 import random
 import time
-import thread
+from threading import Thread
 
 sock352PktHdrData = '!BBBBHHLLQQLL' 
 DEFAULT = 5299
 header_len = struct.calcsize(sock352PktHdrData)
-MAX_PACKET_SIZE = 32000 + header_len
+MAX_PACKET_SIZE = 32000
 
 
 
@@ -110,6 +110,7 @@ class socket:
             return
         
         print("connecting...!")
+        self.connected = True
         return 
     
     def listen(self,backlog):
@@ -147,7 +148,7 @@ class socket:
         if flags == ACK:
             self.connected = True
             print ("Accepted!")
-            
+            self.connected = True 
             self.ack = final_packet.ack_no
         else:
 		#reset
@@ -227,24 +228,30 @@ class socket:
             print("buffer len:", bufferSize)
 	#my_thread = Thread(
 	
+        curr_ack = self.ack
         bytesSent = 0
         bytesLeft = bufferSize 
 	#create thread to make sure all acks are received 
-        gbn_thread = theading.Thread(target=recv_ACK, args=(self.ack+bufferSize)) #target = which function,args = args to that function)        
-	gbn_thread.start()
+        #gbn_thread = Thread(target=self.recv_ACK, args=(self.ack+bufferSize,)) #target = which function,args = args to that function)
+        #gbn_thread.start()
         while bytesSent < bufferSize: #while we still have bytes to send...
-            bufferIndex = bytesSent + MAX_PACKET_SIZE
-            #TODO
-            print("currently sending ", currPacketSize," bytes")
+            i = curr_ack - self.ack 
+            if bytesLeft < MAX_PACKET_SIZE:
+                bufferIndex = i + bytesLeft
+            else:
+                bufferIndex = i + MAX_PACKET_SIZE
+            currPacketSize = bufferIndex - i
+            print("currently sending ", currPacketSize," bytes of ",bufferSize)
             #use send_packet function again, but now we update payload
-            payload_len = c
-        
+            payload_len = buffer[i:bufferIndex]
+            curr_packet_to_send = packet(ACK,header_len,curr_ack,self.ack,currPacketSize)
+            self.packets.append(curr_packet_to_send)
+            self.send_packet(curr_packet_to_send,self.send_addr)
+            #update ack
+            curr_ack += currPacketSize
             #update bytessent
-            bytesSent +=payload_len
-      #     try:
-                         
-        #     except syssock.timeout:
-        #         pass
+            bytesSent += currPacketSize
+            
         return bytesSent 
     
 
@@ -263,7 +270,8 @@ class socket:
         return bytesreceived
     
     def recv_ACK(self,ack_no):
-    
+        print(ack_no)
+        return
 
 
 
