@@ -39,7 +39,7 @@ def init(UDPportTx,UDPportRx):   # initialize your UDP socket here
         portRx = int(UDPportRx)
 
     print("portTx = sending port: ", portTx, "portRx = receiving port: ", portRx)   
-    syssock.socket.bind(('', portRx))
+    #syssock.socket.bind(('', portRx))
 
     pass 
     
@@ -78,7 +78,7 @@ class socket:
         self.recv_addr = (syssock.gethostname(), int(portRx)) #receiving = client
         self.send_addr = (destination, portTx) # sending = server
         
-        #self.socket.bind(self.recv_addr)
+        self.socket.bind(self.recv_addr)
         print("initiating 3 way handshake!")
 
         #STEP 1: send from client
