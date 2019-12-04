@@ -130,7 +130,7 @@ class socket:
                               header_len, checksum, source_port, dest_port, sequence_no,
                               ack_no, window, payload_len)
         ##################
-        sock.sendto(header + " accepted", address)
+        sock.sendto(header , address)
 
         curr += 1
         print("Target acquired")
