@@ -177,12 +177,12 @@ class socket:
     #Step 4: client recvs and sends, ack = seq + 1; ACK flag
     
     def close(self):   # fill in your code here
-        self.socket.settimeout(0.2)
         fin = False
         while not fin or not self.closed: 
             #Step 1 client sends FIN
             print("current self.seq: ", self.seq) 
             #initialize, pack, and send the fin packet 
+            self.socket.settimeout(0.2)
             initialPacket = packet(FIN,header_len,self.seq,0,0)
             self.send_packet(initialPacket,self.send_addr)
 
@@ -203,7 +203,7 @@ class socket:
                 fin = True    
 
         
-        self.socket.settimeout(1)  
+        #self.socket.settimeout(1)  
         
         #Step 3
         while True:
