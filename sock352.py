@@ -323,10 +323,11 @@ class socket:
         if len(this_packet) > header_len:
             payload = this_packet[header_len:]
         else:
-            
-            newPacket = packet(this_packet[1], this_packet[5], this_packet[8], this_packet[9], b''])
-            #because the 11th element in the tuple from send_packet is payload_len, this_packet[11] = payload_len
-            payload 
+            payload = b''
+
+        newPacket = packet(this_packet[1], this_packet[5], this_packet[8], this_packet[9], payload)
+        #because the 11th element in the tuple from send_packet is payload_len, this_packet[11] = payload_len
+         
            
         return (newPacket, addr)
     
