@@ -68,100 +68,144 @@ class socket:
     #step 3: connect & accept- receive the packet - ack_no = seq_no + 1
     #NOTE: address is of type in form {destination IP, port} that client passes in
 
-    def connect(self,address):  # fill in your code here 
-        global portRx, portTx
-        print("header len: ", header_len)
-        if self.connected: #return error
-            print ("Client has already connected to server")
+    # def connect(self,address):  # fill in your code here 
+    #     global portRx, portTx
+    #     print("header len: ", header_len)
+    #     if self.connected: #return error
+    #         print ("Client has already connected to server")
         
-        destination = address[0] 
+    #     destination = address[0] 
         
-        print ("get hostname:",syssock.gethostname()) 
+    #     print ("get hostname:",syssock.gethostname()) 
                 
-        self.recv_addr = (syssock.gethostname(), int(portRx)) #receiving = client
-        self.send_addr = (destination, portTx) # sending = server
-        self.socket.settimeout(0.2)
-        self.socket.bind(self.recv_addr)
-        print("initiating 3 way handshake!")
+    #     self.recv_addr = (syssock.gethostname(), int(portRx)) #receiving = client
+    #     self.send_addr = (destination, portTx) # sending = server
+    #     self.socket.settimeout(0.2)
+    #     self.socket.bind(self.recv_addr)
+    #     print("initiating 3 way handshake!")
 
-        #STEP 1: send from client
-        randSeq = random.randint(1,100) #establish random sequence
-        print ("random int: ", randSeq)
-        #initialize, pack, and send the syn packet 
-        #print("header for payload", len(b''))
-        initialPacket = packet(SYN,header_len,randSeq,0,0)
-        self.send_packet(initialPacket,self.send_addr)
+    #     #STEP 1: send from client
+    #     randSeq = random.randint(1,100) #establish random sequence
+    #     print ("random int: ", randSeq)
+    #     #initialize, pack, and send the syn packet 
+    #     #print("header for payload", len(b''))
+    #     initialPacket = packet(SYN,header_len,randSeq,0,0)
+    #     self.send_packet(initialPacket,self.send_addr)
 
-        #STEP 3: recv ACK from server, send final ACK
-        syn_ack_packet, addr = self.recv_packet()
-        print("recvd syn_ack")
-        flags = syn_ack_packet.flags
-        print(flags)
+    #     #STEP 3: recv ACK from server, send final ACK
+    #     syn_ack_packet, addr = self.recv_packet()
+    #     print("recvd syn_ack")
+    #     flags = syn_ack_packet.flags
+    #     print(flags)
 
-        #check flags
-        if flags == SYN | ACK:
-            print("step 3")
-            syn_ack_packet.payload = b''
-            syn_ack_packet.ack_no = syn_ack_packet.sequence_no + 1
-            syn_ack_packet.flags = ACK
-            self.send_packet(syn_ack_packet, self.send_addr)
-            print("should be done!!")
+    #     #check flags
+    #     if flags == SYN | ACK:
+    #         print("step 3")
+    #         syn_ack_packet.payload = b''
+    #         syn_ack_packet.ack_no = syn_ack_packet.sequence_no + 1
+    #         syn_ack_packet.flags = ACK
+    #         self.send_packet(syn_ack_packet, self.send_addr)
+    #         print("should be done!!")
             
         
-        elif flags == RESET:
-            print ("something went wrong so connection has been reset")
-            return
+    #     elif flags == RESET:
+    #         print ("something went wrong so connection has been reset")
+    #         return
         
-        print("connecting...!")
-        self.connected = True
-        return 
+    #     print("connecting...!")
+    #     self.connected = True
+    #     return 
     
+    # def listen(self,backlog):
+    #     return
+
+    # #accept the connection
+    # def accept(self):
+    #     global portTx
+
+    #     print("ready to accept")
+    #     #STEP 2: server receives SYN and sends SYN-ACK in return    
+    #     initialPacket, addr = self.recv_packet()
+    #     flags = initialPacket.flags
+    #     self.send_addr = (addr[0], int(portTx))
+    #     print(flags)
+        
+    #     if flags == SYN: 
+    #         ack_no = initialPacket.sequence_no + 1
+    #         randSeq = random.randint(1,100)
+    #         self.seq = randSeq
+    #         seq_no = randSeq
+    #         flags = SYN | ACK
+    #         syn_ack_packet = packet(flags,header_len,seq_no,ack_no,0)
+             
+    #         self.send_packet(syn_ack_packet,self.send_addr)
+            
+    #     else: #pack and send the packet reset
+    #         initialPacket.flags = RESET
+    #         self.send_packet(initialPacket,self.send_addr)
+    #         #return
+                 
+    #     #STEP 3 CONTD
+    #     self.socket.settimeout(0.2)
+    #     final_packet, addr = self.recv_packet()
+    #     flags = final_packet.flags
+    #     if flags == ACK:
+    #         self.connected = True
+    #         print ("Accepted!")
+    #         self.connected = True 
+    #         self.ack = final_packet.ack_no
+    #     else:
+	# 	#reset
+    #         final_packet.flags = RESET
+    #         self.send_packet(final_packet, self.send_addr)
+    #         #return	
+    #     print("after connection:self.seq =",self.seq,"self.ack =", self.ack)
+    #     return (self, self.send_addr) 
+    #establish the connection - 3 way handshake
+    def connect(self,address):  # fill in your code here  
+        global portRx, portTx
+        self.socket.bind(self.recv_addr)
+        self.send_addr= (str(address[0]), int(portTx))
+        self.socket.settimeout(0.2)
+        done = False
+        self.ack = random.randint(1,1000)
+        while not done:
+            self.send_packet2(seq_no = self.ack, flags=SYN)
+            syn_ack = self.recv_packet2()
+            if syn_ack['flags'] == SYN | ACK:
+                done = True
+                self.seq = syn_ack['seq_no'] + 1
+                self.ack = syn_ack['ack_no']
+                self.send_packet2(ack_no=self.seq, flags=ACK)
+                return
+                
     def listen(self,backlog):
         return
 
     #accept the connection
     def accept(self):
         global portTx
-
-        print("ready to accept")
-        #STEP 2: server receives SYN and sends SYN-ACK in return    
-        initialPacket, addr = self.recv_packet()
-        flags = initialPacket.flags
-        self.send_addr = (addr[0], int(portTx))
-        print(flags)
-        
-        if flags == SYN: 
-            ack_no = initialPacket.sequence_no + 1
-            randSeq = random.randint(1,100)
-            self.seq = randSeq
-            seq_no = randSeq
-            flags = SYN | ACK
-            syn_ack_packet = packet(flags,header_len,seq_no,ack_no,0)
-             
-            self.send_packet(syn_ack_packet,self.send_addr)
-            
-        else: #pack and send the packet reset
-            initialPacket.flags = RESET
-            self.send_packet(initialPacket,self.send_addr)
-            #return
-                 
-        #STEP 3 CONTD
-        self.socket.settimeout(0.2)
-        final_packet, addr = self.recv_packet()
-        flags = final_packet.flags
-        if flags == ACK:
-            self.connected = True
-            print ("Accepted!")
-            self.connected = True 
-            self.ack = final_packet.ack_no
-        else:
-		#reset
-            final_packet.flags = RESET
-            self.send_packet(final_packet, self.send_addr)
-            #return	
-        print("after connection:self.seq =",self.seq,"self.ack =", self.ack)
-        return (self, self.send_addr) 
-
+        done= False
+        while not done:
+            first_packet = self.recv_packet2()
+            if first_packet['flags'] == SYN:
+                done = True
+                self.seq = first_packet['seq_no'] + 1
+            else:
+                self.send_packet2(dest=first_packet['address'], ack_no= self.seq, flags=RESET)
+            self.socket.settimeout(0.2)
+            self.send_address = (first_packet['address'][0], int(portTx))
+            done = False
+            self.ack = random.randint(1,1000)
+            while not done:
+                self.send_packet2(seq_no = self.ack, ack_no=self.seq, flags=SYN | ACK)
+                second_packet = self.recv_packet2()
+                if second_packet['flags'] == ACK and second_packet['ack_no'] == self.ack + 1:
+                    self.ack = second_packet['ack_no']
+                    done = True
+                else:
+                    self.send_packet2(ack_no=self.ack, flags=RESET)
+        return (self,self.send_address)  
 
     #TCP Close = 2 double handshakes!
     #Step 1: client sends FIN flag to server. use most recent sequence number
