@@ -65,14 +65,14 @@ def main():
     s.connect((destination,port))
     
 
-    longPacker = struct.Struct("!L")
-    fileLenPacked = longPacker.pack(filesize)
-    s.send(fileLenPacked)
+#    longPacker = struct.Struct("!L")
+#    fileLenPacked = longPacker.pack(filesize)
+#    s.send(fileLenPacked)
 
 
-    bytes_to_send = filesize
+#    bytes_to_send = filesize
 
-    start_stamp = time.clock()    
+#    start_stamp = time.clock()    
 
     #TODO UNCOMMENT THIS
 
@@ -84,8 +84,8 @@ def main():
     # totalsent = s.send(file_contents)
     # if (totalsent == 0):
     #     raise RuntimeError("socket broken")    
-    end_stamp = time.clock()
-    lapsed_seconds = end_stamp - start_stamp
+#    end_stamp = time.clock()
+#    lapsed_seconds = end_stamp - start_stamp
     
 
 

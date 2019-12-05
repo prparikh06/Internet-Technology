@@ -4,7 +4,7 @@ import struct
 import sys
 import random
 import time
-from threading import Thread
+from threading import Thread, Lock
 
 sock352PktHdrData = '!BBBBHHLLQQLL' 
 DEFAULT = 5299
@@ -52,6 +52,7 @@ class socket:
         self.ack = 0 #keeps track of most recent ack
         self.seq = 0 #keeps track of most recent seq 
 	#both have to be 0 since ther are of type Q in header file (unsigned)
+        self.timeout_occurred = False
         return
     
     def bind(self,address):
@@ -78,7 +79,7 @@ class socket:
                 
         self.recv_addr = (syssock.gethostname(), int(portRx)) #receiving = client
         self.send_addr = (destination, portTx) # sending = server
-        
+        self.socket.settimeout(0.2)
         self.socket.bind(self.recv_addr)
         print("initiating 3 way handshake!")
 
@@ -90,7 +91,7 @@ class socket:
         self.send_packet(initialPacket,self.send_addr)
 
         #STEP 3: recv ACK from server, send final ACK
-        syn_ack_packet, addr = self.recv_packet()
+        syn_ack_packet, addr = self.recv_packet(header_len)
         print("recvd syn_ack")
         flags = syn_ack_packet.flags
         print(flags)
@@ -122,7 +123,7 @@ class socket:
 
         print("ready to accept")
         #STEP 2: server receives SYN and sends SYN-ACK in return    
-        initialPacket, addr = self.recv_packet()
+        initialPacket, addr = self.recv_packet(header_len)
         flags = initialPacket.flags
         self.send_addr = (addr[0], int(portTx))
         print(flags)
@@ -134,7 +135,7 @@ class socket:
             seq_no = randSeq
             flags = SYN | ACK
             syn_ack_packet = packet(flags,header_len,seq_no,ack_no,0)
-            
+             
             self.send_packet(syn_ack_packet,self.send_addr)
             
         else: #pack and send the packet reset
@@ -143,7 +144,8 @@ class socket:
             #return
                  
         #STEP 3 CONTD
-        final_packet, addr = self.recv_packet()
+        self.socket.settimeout(0.2)
+        final_packet, addr = self.recv_packet(header_len)
         flags = final_packet.flags
         if flags == ACK:
             self.connected = True
@@ -168,14 +170,16 @@ class socket:
     def close(self):   # fill in your code here
         
         #Step 1 client sends FIN
+        
         print("current self.seq: ", self.seq) 
+        
         #initialize, pack, and send the fin packet 
         initialPacket = packet(FIN,header_len,self.seq,0,0)
         self.send_packet(initialPacket,self.send_addr)
 
-   
+        self.socket.settimeout(0.2)
         #Step 2 recv packet and update
-        initialPacket, addr = self.recv_packet()
+        initialPacket, addr = self.recv_packet(header_len)
         flags = initialPacket.flags
         self.send_addr = (addr[0], int(portTx))
         print(flags)
@@ -185,15 +189,21 @@ class socket:
             flags = ACK
             fin_packet = packet(flags,header_len,self.seq,ack_no,0)
             self.send_packet(fin_packet,self.send_addr)
-        elif flags == ACK:
-            self.closed = True    
-        
+            self.closed = True
+        elif flags == ACK and initialPacket.ack_no == self.seq + 1:
+            #TODO do something? 
+            print("this should theoretically break the loop") 
+      
+
+        self.socket.settimeout(0.2)
         #Step 3
-        fin_pack, addr = self.recv_packet()
-        flags = fin_pack.flags
-        #send final FIN
-        if flags == FIN:
-            #Step 4
+        fin_pack, addr = self.recv_packet(header_len)
+        #flags = fin_pack.flags
+        payload = fin_pack.payload_len
+        if payload < 0:
+            return
+        elif fin_pack.flags == FIN: 
+      	    #send final ACK
             flags = ACK
             ack_no = fin_pack.sequence_no + 1
             fin_packet = packet(flags,header_len,self.seq,ack_no,0)
@@ -210,74 +220,94 @@ class socket:
 
     def send(self,buffer):  # fill in your code here 
         if not self.connected:
-            print("client has not connected with socket:(")
-            return
+            print("client has not connected with socket :(")
+            return -1
         elif self.closed:
             print("connection has already been closed")
-            return
-
-	#theory: in send, have a new thread for each packet we're going to send
-        #buffer = file contents #bytessent should be size of what we can handle 
-        print("sending has begun!!!")
-        bufferIndex = 0 #tells where in the buffer we are
-        bufferSize = len(buffer) 
-        if bufferSize < 0: 
-            print ("file size is invalid")
-            return 
-        else:
-            print("buffer len:", bufferSize)
-	#my_thread = Thread(
-	
-        curr_ack = self.ack
-        bytesSent = 0
-        bytesLeft = bufferSize 
-	#create thread to make sure all acks are received 
-        #gbn_thread = Thread(target=self.recv_ACK, args=(self.ack+bufferSize,)) #target = which function,args = args to that function)
-        #gbn_thread.start()
-        while bytesSent < bufferSize: #while we still have bytes to send...
-            i = curr_ack - self.ack 
-            if bytesLeft < MAX_PACKET_SIZE:
-                bufferIndex = i + bytesLeft
-            else:
-                bufferIndex = i + MAX_PACKET_SIZE
-            currPacketSize = bufferIndex - i
-            print("currently sending ", currPacketSize," bytes of ",bufferSize)
-            #use send_packet function again, but now we update payload
-            payload_len = buffer[i:bufferIndex]
-            curr_packet_to_send = packet(ACK,header_len,curr_ack,self.ack,currPacketSize)
-            self.packets.append(curr_packet_to_send)
-            self.send_packet(curr_packet_to_send,self.send_addr)
-            #update ack
-            curr_ack += currPacketSize
-            #update bytessent
-            bytesSent += currPacketSize
+            return -1
+        final_ack = len(buffer) + self.ack   #what our final ack should be
+        bytesLeft = len(buffer) #bytes left to send
+        self.socket.settimeout(0.2)
+        #we want to have a thread to keep track of all the acks recvd, which is different function
+        ack_thread = Thread(target=self.recv_ack, args = (final_ack))
+        curr_ack = len(buffer)
+        ack_thread.start()
+        while ack_thread.isAlive():
+            with Lock():
+                if self.timeout_occurred: #if timeout occurred, GBN
+                     curr_ack = self.ack #reset ack 
+                     self.timout_occurred = False
+            if curr_ack >= final_ack: 
+                curr_ack = max(curr_ack-MAX_PACKET_SIZE, self.ack)
+            startIndex = curr_ack - self.ack
+            bytesLeft = final_ack - curr_ack
+            endIndex = startIndex + min(bytesLeft, MAX_PACKET_SIZE)
+            payload = buffer[startIndex : endIndex]
+            payload_len = startIndex - endIndex
+            #send payload packet
+            curr_packet = packet(0x0,header_len,curr_ack , 0, payload_len)
+            curr_ack += payload_len #update the current ack by adding however many bytes we sent
             
-        return bytesSent 
+        return len(buffer) 
     
 
     def recv(self,nbytes):
-        bytesreceived = 0     # fill in your code here
-               
-        # while bytesreceived < nbytes:
-        #     try:
-        #         currPacket = self.mySock.recv(min(nbytes - bytesreceived, MAX_PACKET_SIZE))
-        #         packets.append(currPacket)
-        #         bytesreceived = bytesreceived + len(packet)
-            
-            
-        #     except syssock.timeout:
-        #         pass
-        return bytesreceived
+        packets_recvd = 0     # fill in your code here
+        self.socket.settimeout(None)
+        packets_to_send = int(ceil(float(nbytes/MAX_PACKET_SIZE)))
+        packet_size = 0
+        while packets_recvd < packets_to_send:
+            if packets_recvd  == packets_to_send - 1:
+                packet_size = header_len + nbytes - (packets_recvd * MAX_PACKET_SIZE)
+            else: 
+                packet_size = header_len + MAX_PACKET_SIZE
+
+            curr_packet = self.recv_packet(packet_size)
+         
+	    if curr_packet.flags != 0:
+
+                print("flag was not 0, nbd")
+
+            elif curr_packet.sequence_no == self.seq:
+                self.packets.append(curr_packet) 
+                packets_recvd += 1
+            curr_packet.ack_no = self.seq
+            curr_packet.flags = ACK
+            return b''.join(self.packets) 
+                
     
-    def recv_ACK(self,ack_no):
+    def recv_ack(self,ack_no):
+        
         print(ack_no)
-        return
+        timer = time.time()
+        while self.ack < ack_no:
+            curr_pack = self.recv_packet(header_len)
+            flag = curr_pack.flags
+            if flag == ACK:
+                if curr_pack.ack_no > self.ack:
+                    with Lock():
+                        self.ack = curr_pack.ack_no
+                        timer = time.time()
+            elif flag == RESET:
+                curr_pack.flags = ACK
+                curr_pack.ack_no = self.seq
+                self.send_packet(curr_pack,self.self.send_addr)
+            elif flag == FIN: #done sending
+                self.closed = True
+                curr_packet.ack_no = curr_packet.sequence_no + 1
+                curr_packet.flags = ACK
+                self.send_packet(curr_packet,self.send_arr)
+            if time.time() - timer > 0.2:
+               self.register_timeout() 
 
 
 
-    
-    def recv_packet(self):
-        syn_ack_packet_data,addr = self.socket.recvfrom(header_len)
+    def register_timeout(self):
+        with Lock():
+            self.timeout = True
+  
+    def recv_packet(self,size):
+        syn_ack_packet_data,addr = self.socket.recvfrom(size)
         syn_ack_packet = struct.unpack(sock352PktHdrData, syn_ack_packet_data)
         
         newPacket = packet(syn_ack_packet[1], syn_ack_packet[5], syn_ack_packet[8], syn_ack_packet[9], syn_ack_packet[11])
