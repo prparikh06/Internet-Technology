@@ -164,6 +164,7 @@ class socket:
     #establish the connection - 3 way handshake
     def connect(self,address):  # fill in your code here  
         global portRx, portTx
+        self.recv_addr = (syssock.gethostname(), int(portRx))
         self.socket.bind(self.recv_addr)
         self.send_addr= (str(address[0]), int(portTx))
         self.socket.settimeout(0.2)
@@ -177,7 +178,8 @@ class socket:
                 self.seq = syn_ack['seq_no'] + 1
                 self.ack = syn_ack['ack_no']
                 self.send_packet2(ack_no=self.seq, flags=ACK)
-                return
+        self.connected = True 
+        return
                 
     def listen(self,backlog):
         return
@@ -194,7 +196,7 @@ class socket:
             else:
                 self.send_packet2(dest=first_packet['address'], ack_no= self.seq, flags=RESET)
             self.socket.settimeout(0.2)
-            self.send_address = (first_packet['address'][0], int(portTx))
+            self.send_addr = (first_packet['address'][0], int(portTx))
             done = False
             self.ack = random.randint(1,1000)
             while not done:
@@ -205,7 +207,7 @@ class socket:
                     done = True
                 else:
                     self.send_packet2(ack_no=self.ack, flags=RESET)
-        return (self,self.send_address)  
+        return (self,self.send_addr)  
 
     #TCP Close = 2 double handshakes!
     #Step 1: client sends FIN flag to server. use most recent sequence number
@@ -263,10 +265,10 @@ class socket:
         
     # #     self.socket.close()
     #     return  
-    def clost(self):   # fill in your code here
+    def close(self):   # fill in your code here
         self.socket.settimeout(0.2)
-        fine_sent = False
-        while not self.closed or not fine_sent:
+        fin_sent = False
+        while not self.closed or not fin_sent:
             self.send_packet2(seq_no=self.seq, flags=FIN)
             fin_pack = self.recv_packet2()
             flag = fin_pack['flags']
