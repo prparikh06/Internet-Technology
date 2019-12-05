@@ -100,7 +100,7 @@ class socket:
             self.mySock.settimeout(0.2)
             self.send_address = (first_packet['address'][0], int(send_port))
             done = False
-            self.rn = randint(1,1000)
+            self.rn = random.randint(1,1000)
             while not done:
                 self.send_packet(seq_no = self.rn, ack_no=self.my_rn, flags=SYN | ACK)
                 second_packet = self.get_packet()
@@ -143,7 +143,7 @@ class socket:
         num_left = len(buffer)
         start_rn = self.rn
         imagined_rn = self.rn
-        ack_therad.start()
+        ack_thread.start()
         while ack_thread.isAlive():
             with self.lock:
                 if self.timeout:
@@ -209,7 +209,7 @@ class socket:
     			packet, addr = self.mySock.recvfrom(size)
     		except syssock.timeout:
     			timeout_func()
-    			return dict(zip(('version', 'flags', 'opt_ptr', 'protocol', 'checksum', 'header_len', 'source_port', 'dest_port', 'seq_no', 'ack_no', 'window', 'payload_len', 'payload', 'address'), (-1 for i in range(14))))
+    			return dict(zip(('version', 'flags', 'opt_ptr', 'protocol', 'checksum', 'HEADER_LEN', 'source_port', 'dest_port', 'seq_no', 'ack_no', 'window', 'payload_len', 'payload', 'address'), (-1 for i in range(14))))
     		header = packet[:header_len]
     		header_values = self.struct.unpack(header)
     		if len(packet) > header_len:
@@ -217,7 +217,7 @@ class socket:
     		else:
     			payload = 0
     			return_values = header_values + (payload, addr)
-    			return_dict = dict(zip(('version', 'flags', 'opt_ptr', 'protocol', 'checksum', 'header_len','source_port', 'dest_port', 'seq_no', 'ack_no', 'window', 'payload_len', 'payload', 'address'), return_values))
+    			return_dict = dict(zip(('version', 'flags', 'opt_ptr', 'protocol', 'checksum', 'HEADER_LEN','source_port', 'dest_port', 'seq_no', 'ack_no', 'window', 'payload_len', 'payload', 'address'), return_values))
     			return return_dict
     			
     			
@@ -235,5 +235,7 @@ class socket:
     	HEADER_LEN = header_len
     	header = self.struct.pack(version, flags, opt_ptr, protocol, checksum, HEADER_LEN, source_port, dest_port, seq_no, ack_no, window, payload_len)
     	packet = header + payload
-    	if random.randint(0,4):
-    		self.mySock.sendto_bad(packet, dest)
+    	if random.randint(1,4):
+    		self.mySock.sendto(packet, dest)
+            	
+                
