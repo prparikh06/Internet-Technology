@@ -3,6 +3,7 @@ import socket as syssock
 import struct
 import sys
 import random
+import math
 import time
 from threading import Thread, Lock
 
@@ -254,7 +255,7 @@ class socket:
     def recv(self,nbytes):
         packets_recvd = 0     # fill in your code here
         self.socket.settimeout(None)
-        packets_to_send = int(ceil(float(nbytes/MAX_PACKET_SIZE)))
+        packets_to_send = int(math.ceil(float(nbytes/MAX_PACKET_SIZE)))
         packet_size = 0
         while packets_recvd < packets_to_send:
             if packets_recvd  == packets_to_send - 1:
@@ -262,9 +263,8 @@ class socket:
             else: 
                 packet_size = header_len + MAX_PACKET_SIZE
 
-            curr_packet = self.recv_packet(packet_size)
-         
-	    if curr_packet.flags != 0:
+            curr_packet,addr = self.recv_packet(packet_size)
+            if curr_packet.flags != 0:
 
                 print("flag was not 0, nbd")
 
@@ -281,22 +281,22 @@ class socket:
         print(ack_no)
         timer = time.time()
         while self.ack < ack_no:
-            curr_pack = self.recv_packet(header_len)
-            flag = curr_pack.flags
+            curr_packet,addr = self.recv_packet(header_len)
+            flag = curr_packet.flags
             if flag == ACK:
-                if curr_pack.ack_no > self.ack:
+                if curr_packet.ack_no > self.ack:
                     with Lock():
-                        self.ack = curr_pack.ack_no
+                        self.ack = curr_packet.ack_no
                         timer = time.time()
             elif flag == RESET:
-                curr_pack.flags = ACK
-                curr_pack.ack_no = self.seq
-                self.send_packet(curr_pack,self.self.send_addr)
+                curr_packet.flags = ACK
+                curr_packet.ack_no = self.seq
+                self.send_packet(curr_packet,self.send_addr)
             elif flag == FIN: #done sending
                 self.closed = True
                 curr_packet.ack_no = curr_packet.sequence_no + 1
                 curr_packet.flags = ACK
-                self.send_packet(curr_packet,self.send_arr)
+                self.send_packet(curr_packet,self.send_addr)
             if time.time() - timer > 0.2:
                self.register_timeout() 
 
