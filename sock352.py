@@ -267,6 +267,9 @@ class socket:
                 packet_size = header_len + MAX_PACKET_SIZE
 
             curr_packet,addr = self.recv_packet(packet_size)
+            payload = curr_packet.payload
+            print("curr packs payload type: ", type(payload))
+            
             if curr_packet.flags != 0:
 
                 print("flag was not 0, nbd")
@@ -276,6 +279,8 @@ class socket:
                 packets_recvd += 1
             curr_packet.ack_no = self.seq
             curr_packet.flags = ACK
+            curr_packet.payload = payload
+            self.send_packet(curr_packet,self.send_addr)
             return b''.join(self.packets) 
                 
     
@@ -310,17 +315,26 @@ class socket:
             self.timeout = True
   
     def recv_packet(self,size):
+        my_struct = struct.Struct(sock352PktHdrData)
         syn_ack_packet_data,addr = self.socket.recvfrom(size)
-        syn_ack_packet = struct.unpack(sock352PktHdrData, syn_ack_packet_data)
+        header = syn_ack_packet_data[:header_len]
+        this_packet = my_struct.unpack(header)
         
-        newPacket = packet(syn_ack_packet[1], syn_ack_packet[5], syn_ack_packet[8], syn_ack_packet[9], syn_ack_packet[11])
+        if len(this_packet) > header_len:
+            payload = this_packet[header_len:]
+        else:
+            
+            newPacket = packet(this_packet[1], this_packet[5], this_packet[8], this_packet[9], b''])
+            #because the 11th element in the tuple from send_packet is payload_len, this_packet[11] = payload_len
+            payload 
+           
         return (newPacket, addr)
     
     
     def send_packet(self,packetToSend, address):
         my_struct = struct.Struct(sock352PktHdrData)
         print("type of payload", type(packetToSend.payload))
-        packetToSendData = my_struct.pack(packetToSend.version, packetToSend.flags, packetToSend.opt_ptr, packetToSend.protocol, packetToSend.checksum, packetToSend.header_len, packetToSend.source_port, packetToSend.dest_port, packetToSend.sequence_no, packetToSend.ack_no, packetToSend.window, len(packetToSend.payload))
+        packetToSendData = my_struct.pack(packetToSend.version, packetToSend.flags, packetToSend.opt_ptr, packetToSend.protocol, packetToSend.checksum, packetToSend.header_len, packetToSend.source_port, packetToSend.dest_port, packetToSend.sequence_no, packetToSend.ack_no, packetToSend.window, packetToSend.payload_len)
         
         self.socket.sendto(packetToSendData+packetToSend.payload, address)
         return
@@ -342,5 +356,6 @@ class packet:
         self.ack_no = ack_no #9
         self.window = 0 #10
         self.payload = payload #11
+        self.payload_len = len(payload) # 12
         return    
  
