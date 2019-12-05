@@ -89,7 +89,7 @@ class socket:
         print ("random int: ", randSeq)
         #initialize, pack, and send the syn packet 
         print("header for payload", len(b''))
-        initialPacket = packet(SYN,header_len,randSeq,0,b'',0)
+        initialPacket = packet(SYN,header_len,randSeq,0,0)
         self.send_packet(initialPacket,self.send_addr)
 
         #STEP 3: recv ACK from server, send final ACK
@@ -136,7 +136,7 @@ class socket:
             self.seq = randSeq
             seq_no = randSeq
             flags = SYN | ACK
-            syn_ack_packet = packet(flags,header_len,seq_no,ack_no,b'',0)
+            syn_ack_packet = packet(flags,header_len,seq_no,ack_no,0)
              
             self.send_packet(syn_ack_packet,self.send_addr)
             
@@ -176,7 +176,7 @@ class socket:
         print("current self.seq: ", self.seq) 
         
         #initialize, pack, and send the fin packet 
-        initialPacket = packet(FIN,header_len,self.seq,0,b'',0)
+        initialPacket = packet(FIN,header_len,self.seq,0,0)
         self.send_packet(initialPacket,self.send_addr)
 
         self.socket.settimeout(0.2)
@@ -189,7 +189,7 @@ class socket:
         if flags == FIN: 
             ack_no = initialPacket.sequence_no + 1
             flags = ACK
-            fin_packet = packet(flags,header_len,self.seq,ack_no,b'',0)
+            fin_packet = packet(flags,header_len,self.seq,ack_no,0)
             self.send_packet(fin_packet,self.send_addr)
             self.closed = True
         elif flags == ACK and initialPacket.ack_no == self.seq + 1:
@@ -208,7 +208,7 @@ class socket:
       	    #send final ACK
             flags = ACK
             ack_no = fin_pack.sequence_no + 1
-            fin_packet = packet(flags,header_len,self.seq,ack_no,b'',0)
+            fin_packet = packet(flags,header_len,self.seq,ack_no,0)
             self.send_packet(fin_packet, self.send_addr)
 
         #else: #take care of this    
@@ -247,9 +247,7 @@ class socket:
             payload = buffer[startIndex : endIndex]
             payload_len =  endIndex - startIndex
             #send payload packet
-            curr_packet = packet(0, header_len,curr_ack, 0, payload,payload_len)
-            print(0,header_len,curr_ack,0,payload_len)
-            self.send_packet(curr_packet, self.send_addr)
+            self.send_packet2(seq_no=curr_ack, payload=payload)          
             curr_ack += payload_len #update the current ack by adding however many bytes we sent
             
         return len(buffer) 
@@ -266,45 +264,39 @@ class socket:
             else: 
                 packet_size = header_len + MAX_PACKET_SIZE
 
-            curr_packet,addr = self.recv_packet(packet_size)
-            payload = curr_packet.payload
+            curr_packet = self.recv_packet2(packet_size)
+            payload = curr_packet['payload']
             print("curr packs payload type: ", type(payload))
             
-            if curr_packet.flags != 0:
+            if curr_packet['flags'] != 0:
 
                 print("flag was not 0, nbd")
 
-            elif curr_packet.sequence_no == self.seq:
-                self.packets.append(curr_packet.payload) 
+            elif curr_packet['seq_no'] == self.seq:
+                self.packets.append(curr_packet['payload']) 
                 packets_recvd += 1
-            curr_packet.ack_no = self.seq
-            curr_packet.flags = ACK
-            curr_packet.payload = payload
-            self.send_packet(curr_packet,self.send_addr)
+            
+            self.send_packet2(ack_no=self.seq, flags=ACK)
             return b''.join(self.packets) 
                 
     
     def recv_ack(self,ack_no):
         
-        print(ack_no)
+        print("ack = ",ack_no)
         timer = time.time()
         while self.ack < ack_no:
-            curr_packet,addr = self.recv_packet(header_len)
-            flag = curr_packet.flags
+            curr_packet = self.recv_packet2(header_len)
+            flag = curr_packet['flags']
             if flag == ACK:
-                if curr_packet.ack_no > self.ack:
+                if curr_packet['ack_no'] > self.ack:
                     with Lock():
-                        self.ack = curr_packet.ack_no
+                        self.ack = curr_packet['ack_no'] 
                         timer = time.time()
             elif flag == RESET:
-                curr_packet.flags = ACK
-                curr_packet.ack_no = self.seq
-                self.send_packet(curr_packet,self.send_addr)
+                self.send_packet2(ack_no=self.seq,flags=ACK)
             elif flag == FIN: #done sending
                 self.closed = True
-                curr_packet.ack_no = curr_packet.sequence_no + 1
-                curr_packet.flags = ACK
-                self.send_packet(curr_packet,self.send_addr)
+                self.send_packet2(ack_no=curr_packet['seq_no'] + 1, flags=ACK)
             if time.time() - timer > 0.2:
                self.register_timeout() 
 
@@ -314,24 +306,7 @@ class socket:
         with Lock():
             self.timeout = True
   
-    def recv_packet(self,size):
-        my_struct = struct.Struct(sock352PktHdrData)
-        syn_ack_packet_data,addr = self.socket.recvfrom(size)
-        header = syn_ack_packet_data[:header_len]
-        this_packet = my_struct.unpack(header)
-        
-        if len(this_packet) > header_len:
-            payload = this_packet[header_len:]
-        else:
-            payload = 0
 
-        newPacket = packet(this_packet[1], this_packet[5], this_packet[8], this_packet[9], payload,this_packet[11])
-        #because the 11th element in the tuple from send_packet is payload_len, this_packet[11] = payload_len
-         
-           
-        return (newPacket, addr)
-    
-    
     def send_packet(self,packetToSend, address):
         my_struct = struct.Struct(sock352PktHdrData)
         print("type of payload", type(packetToSend.payload))
@@ -339,12 +314,57 @@ class socket:
         
         self.socket.sendto(packetToSendData+packetToSend.payload, address)
         return
+    
+    def recv_packet(self,size):
+        packet, addr = self.socket.recvfrom(size)
+        packet_vals = struct.unpack(sock352PktHdrData, packet)
+        newPacket = packet(packet_vals[1],packet_vals[5], packet_vals[8], packet_vals[9], packet_vals[11])
 
-
+        return newPacket
+    
+    def doNothing(self):
+        pass
+    
+    def recv_packet2(self, size=header_len, timeout_func = doNothing):
+        try:
+            packet, addr = self.socket.recvfrom(size)
+        except syssock.timeout:
+            timeout_func()
+            return dict(zip(('version', 'flags', 'opt_ptr', 'protocol', 'checksum', 'header_len', 'source_port', 'dest_port', 'seq_no', 'ack_no', 'window', 'payload_len', 'payload', 'address'), (-1 for i in range(14))))
+        
+        header = packet[:header_len]
+        header_values = struct.unpack(sock352PktHdrData,header)
+        if len(packet) > header_len:
+            payload = packet[header_len:]
+    	
+        else:
+    	    payload = 0
+        
+        return_values = header_values + (payload, addr)
+    	
+        return_dict = dict(zip(('version', 'flags', 'opt_ptr', 'protocol', 'checksum', 'header_len','source_port', 'dest_port', 'seq_no', 'ack_no', 'window', 'payload_len', 'payload', 'address'), return_values))
+    	
+        return return_dict
+    
+    def send_packet2(self, dest=None, seq_no=0, ack_no=0, payload = b'', flags=0):
+        if dest == None:
+            dest = self.send_addr
+        version = 1
+        opt_ptr = 0
+        protocol = 0
+        checksum = 0
+        source_port = 0
+        dest_port = 0
+        window = 0
+        payload_len = len(payload)
+        HEADER_LEN = header_len
+        header = struct.Struct(sock352PktHdrData).pack(version, flags, opt_ptr, protocol, checksum, HEADER_LEN, source_port, dest_port, seq_no, ack_no, window, payload_len)
+        packet = header + payload
+        self.socket.sendto(packet, dest)
 
 #creating a packet "struct"
 class packet:
-    def __init__(self,flags, header_len,sequence_no,ack_no,payload,payload_len):     #initialize the packet
+    def __init__(self,flags, header_len,sequence_no,ack_no,payload):     #initialize the packet
         self.version = 1 #0
         self.flags = flags #1
         self.opt_ptr = 0 #2
@@ -356,7 +376,7 @@ class packet:
         self.sequence_no = sequence_no #8
         self.ack_no = ack_no #9
         self.window = 0 #10
-        self.payload = payload #11
-        self.payload_len = payload_len # 12
+        self.payload_len = payload #11
+        
         return    
  
