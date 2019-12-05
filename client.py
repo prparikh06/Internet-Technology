@@ -63,37 +63,34 @@ def main():
 
     s = sock352.socket()
     s.connect((destination,port))
-    
-
-#    longPacker = struct.Struct("!L")
-#    fileLenPacked = longPacker.pack(filesize)
-#    s.send(fileLenPacked)
+    longPacker = struct.Struct("!L")
+    fileLenPacked = longPacker.pack(filesize)
+    s.send(fileLenPacked)
 
 
-#    bytes_to_send = filesize
+    bytes_to_send = filesize
 
-#    start_stamp = time.clock()    
-
-    #TODO UNCOMMENT THIS
-
-    # file_contents = fd.read()
-
-    # totalsent = 0
-    # # make sure we sent the whole fragment 
-
-    # totalsent = s.send(file_contents)
-    # if (totalsent == 0):
-    #     raise RuntimeError("socket broken")    
-#    end_stamp = time.clock()
-#    lapsed_seconds = end_stamp - start_stamp
-    
+    start_stamp = time.clock()    
 
 
-    # if (lapsed_seconds > 0.0):
-        # print ("client1: sent %d bytes in %0.6f seconds, %0.6f MB/s " % (filesize, lapsed_seconds,
-# (filesize/lapsed_seconds)/(1024*1024)))
-    # else:
-        # print ("client1: sent %d bytes in %d seconds, inf MB/s " % (filesize, lapsed_seconds))        
+    file_contents = fd.read()
+
+    totalsent = 0
+    # make sure we sent the whole fragment 
+
+    totalsent = s.send(file_contents)
+    if (totalsent == 0):
+        raise RuntimeError("socket broken")    
+    end_stamp = time.clock()
+    lapsed_seconds = end_stamp - start_stamp
+        
+
+
+    if (lapsed_seconds > 0.0):
+        print ("client1: sent %d bytes in %0.6f seconds, %0.6f MB/s " % (filesize, lapsed_seconds,
+(filesize/lapsed_seconds)/(1024*1024)))
+    else:
+        print ("client1: sent %d bytes in %d seconds, inf MB/s " % (filesize, lapsed_seconds))        
 
     fd.close()
     s.close()

@@ -73,30 +73,30 @@ def main():
     # as a 4 byte integer in network byte order (big endian)
     
     #TODO UNCOMMENT THIS
-    # longPacker = struct.Struct("!L")
+    longPacker = struct.Struct("!L")
     
     
-    # long = s2.recv(4)
-    # fn = longPacker.unpack(long)
-    # filelen = fn[0]
+    long = s2.recv(4)
+    fn = longPacker.unpack(long)
+    filelen = fn[0]
     
 
     start_stamp = time.clock()
 
 
-    # file = s2.recv(filelen)
+    file = s2.recv(filelen)
 
-    # fd.write(file)
+    fd.write(file)
 
-    # end_stamp = time.clock() 
-    # lapsed_seconds = end_stamp - start_stamp
+    end_stamp = time.clock() 
+    lapsed_seconds = end_stamp - start_stamp
 
 
-    # if (lapsed_seconds > 0.0):
-    #     print ("server1: received %d bytes in %0.6f seconds, %0.6f MB/s " % (filelen, lapsed_seconds,
-# (filelen/lapsed_seconds)/(1024*1024)))
-   #  else:
-      #  print ("server1: received %d bytes in %d seconds, inf MB/s " % (filelen, lapsed_seconds))
+    if (lapsed_seconds > 0.0):
+        print ("server1: received %d bytes in %0.6f seconds, %0.6f MB/s " % (filelen, lapsed_seconds,
+(filelen/lapsed_seconds)/(1024*1024)))
+    else:
+       print ("server1: received %d bytes in %d seconds, inf MB/s " % (filelen, lapsed_seconds))
     fd.close()
     s2.close()
     

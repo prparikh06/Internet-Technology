@@ -246,7 +246,8 @@ class socket:
             payload = buffer[startIndex : endIndex]
             payload_len = startIndex - endIndex
             #send payload packet
-            curr_packet = packet(0x0,header_len,curr_ack , 0, payload_len)
+            curr_packet = packet(0,header_len,curr_ack , 0, payload_len)
+            self.send_packet(curr_packet, self.send_addr)
             curr_ack += payload_len #update the current ack by adding however many bytes we sent
             
         return len(buffer) 
