@@ -46,7 +46,8 @@ class socket:
         #make a UDP socket as defined in the Python library
         self.socket = syssock.socket(syssock.AF_INET, syssock.SOCK_DGRAM)
         #self.socket.settimeout(0.2) #set the timeout 
-        self.connected = False #boolean to keep track of open connection
+        self.connected = False 
+        #boolean to keep track of open connection
         self.closed = False
         self.packets = [] #list to keep track of data sent
         self.ack = 0 #keeps track of most recent ack
@@ -86,8 +87,8 @@ class socket:
         randSeq = random.randint(1,100) #establish random sequence
         print ("random int: ", randSeq)
         #initialize, pack, and send the syn packet - use while loop 
-        connected = False
-        while not connected:
+      
+        while not self.connected:
             initialPacket = packet(SYN,header_len,randSeq,0,0)
             self.send_packet(initialPacket,self.send_addr)
 
@@ -96,24 +97,24 @@ class socket:
             print("recvd syn_ack")
             flags = syn_ack_packet.flags
             print(flags)
-
+            #self.socket.settimeout(0.2)
             #check flags
             if flags == SYN | ACK:
+                
                 print("step 3")
                 final_packet = syn_ack_packet
                 final_packet.ack_no = final_packet.sequence_no + 1
                 final_packet.flags = ACK
                 self.send_packet(final_packet, self.send_addr)
                 print("should be done!!")
-                connected = True
-
-            
+                print("connecting..." )
+                self.connected = True
+                return
             else:
                 print ("something went wrong so returned")
                 return
             
-        print("connecting...!")
-        self.connected = True
+       
         return 
     
     def listen(self,backlog):
@@ -146,12 +147,12 @@ class socket:
         seq_no = randSeq
         flags = SYN | ACK
         syn_ack_packet = packet(flags,header_len,seq_no,ack_no,0)
-        self.send_packet(syn_ack_packet,self.send_addr)
-        #Step 2 finished    
-
-        #STEP 3 CONTD
+      
+        #STEP 2 and 3 CONTD
         accepted = False
         while not accepted:
+            self.send_packet(syn_ack_packet,self.send_addr)
+  
             final_packet, addr = self.recv_packet()
             flags = final_packet.flags
             if flags == ACK:
@@ -182,10 +183,10 @@ class socket:
             #Step 1 client sends FIN
             print("current self.seq: ", self.seq) 
             #initialize, pack, and send the fin packet 
-            self.socket.settimeout(0.2)
+            #self.socket.settimeout(0.2)
             initialPacket = packet(FIN,header_len,self.seq,0,0)
             self.send_packet(initialPacket,self.send_addr)
-
+            self.socket.settimeout(0.2)
     
             #Step 2 recv packet and update
             initialPacket, addr = self.recv_packet()
