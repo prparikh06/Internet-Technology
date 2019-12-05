@@ -65,6 +65,7 @@ def main():
     s.connect((destination,port))
     longPacker = struct.Struct("!L")
     fileLenPacked = longPacker.pack(filesize)
+    print("filesize = ", filesize)
     s.send(fileLenPacked)
 
 

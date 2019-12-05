@@ -251,7 +251,6 @@ class socket:
             payload_len =  len(payload)
             #send payload packet
             self.send_packet2(seq_no=curr_ack, payload=payload)         
-             
             curr_ack += payload_len #update the current ack by adding however many bytes we sent
             
         return len(buffer) 
@@ -278,11 +277,13 @@ class socket:
                 print("flag was not 0, nbd")
 
             elif curr_packet['seq_no'] == self.seq:
+                #self.seq += curr_packet['payload_len']
                 packets.append(curr_packet['payload']) 
                 packets_recvd += 1
                 print("packet", packets_recvd, "of ", packets_to_send,"recvd")
                 
             self.send_packet2(ack_no=self.seq, flags=ACK)
+        
         final_str = b''.join(packets)
         print("finsl string = ",final_str)
         print("packets", packets)
@@ -295,13 +296,13 @@ class socket:
         print("ack = ",ack_no)
         timer = time.time()
         while self.ack < ack_no:
-            curr_packet = self.recv_packet2(header_len)
+            curr_packet = self.recv_packet2(timeout_func=self.register_timeout)
             flag = curr_packet['flags']
             if flag == ACK:
                 if curr_packet['ack_no'] > self.ack:
                     with Lock():
                         self.ack = curr_packet['ack_no'] 
-                        timer = time.time()
+                    timer = time.time()
             elif flag == RESET:
                 self.send_packet2(ack_no=self.seq,flags=ACK)
             elif flag == FIN: #done sending
