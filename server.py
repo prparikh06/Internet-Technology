@@ -76,13 +76,14 @@ def main():
     longPacker = struct.Struct("!L")
     
     
-    long = s2.recv(4)
-    fn = longPacker.unpack(long)
+    long_test = s2.recv(4)
+    print("buffer len = ", len(long_test))
+    fn = longPacker.unpack(long_test)
     filelen = fn[0]
-    
+    print(fn) 
 
     start_stamp = time.clock()
-
+    print("file len to recv is ", filelen)
 
     file = s2.recv(filelen)
 
