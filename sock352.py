@@ -109,66 +109,7 @@ class socket:
                     self.send_packet2(ack_no=self.ack, flags=RESET)
         return (self,self.send_addr)  
 
-<<<<<<< HEAD
-    #TCP Close = 2 double handshakes!
-    #Step 1: client sends FIN flag to server. use most recent sequence number
-    #Step 2: server receives; flag = ACK; ack_no = seq + 1 to client
-    #Step 3: again, server sends. FIN flag is set, 
-    #Step 4: client recvs and sends, ack = seq + 1; ACK flag
-    
-    # def close(self):   # fill in your code here
-        
-    #     #Step 1 client sends FIN
-        
-    #     print("current self.seq: ", self.seq) 
-        
-    #     #initialize, pack, and send the fin packet 
-    #     initialPacket = packet(FIN,header_len,self.seq,0,0)
-    #     self.send_packet(initialPacket,self.send_addr)
-
-    #     self.socket.settimeout(0.2)
-    #     #Step 2 recv packet and update
-    #     initialPacket, addr = self.recv_packet()
-    #     flags = initialPacket.flags
-    #     self.send_addr = (addr[0], int(portTx))
-    #     print(flags)
-        
-    #     if flags == FIN: 
-    #         ack_no = initialPacket.sequence_no + 1
-    #         flags = ACK
-    #         fin_packet = packet(flags,header_len,self.seq,ack_no,0)
-    #         self.send_packet(fin_packet,self.send_addr)
-    #         self.closed = True
-    #     elif flags == ACK and initialPacket.ack_no == self.seq + 1:
-    #         #TODO do something? 
-    #         print("this should theoretically break the loop") 
-      
-
-    #     self.socket.settimeout(0.2)
-    #     #Step 3
-    #     fin_pack, addr = self.recv_packet()
-    #     #flags = fin_pack.flags
-    #     payload = fin_pack.payload_len
-    #     if payload < 0:
-    #         return
-    #     elif fin_pack.flags == FIN: 
-    #   	    #send final ACK
-    #         flags = ACK
-    #         ack_no = fin_pack.sequence_no + 1
-    #         fin_packet = packet(flags,header_len,self.seq,ack_no,0)
-    #         self.send_packet(fin_packet, self.send_addr)
-
-    #     #else: #take care of this    
-    #     self.closed = True
-    #     #STEP 2 & 3: server receives FIN and sends FIN-ACK back
-      
-    #     print("Connection closed!!!")
-        
-    # #     self.socket.close()
-    #     return  
-=======
  
->>>>>>> 1f2fc0c66f37ffd5ef0ce333b8fe0193405fd344
     def close(self):   # fill in your code here
         self.socket.settimeout(0.2)
         fin_sent = False
