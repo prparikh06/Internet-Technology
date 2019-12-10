@@ -193,7 +193,7 @@ class socket:
                 print("flag was not 0, nbd")
 
             elif curr_packet['seq_no'] == self.seq:
-                self.seq += payload
+                self.seq += curr_packet['payload_len']
                 packets.append(payload) 
                 packets_recvd += 1
                 
