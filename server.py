@@ -1,15 +1,16 @@
 #!/usr/bin/python
 
-# This is the CS 352 Spring 2017 Server for the 1st programming
+# This is the CS 352 Spring 2017 server for the 3rd programming
 # project
 
-
+# (c) 2017, R. P. Martin, under the GPL version 2. 
 
 import argparse
 import time
-import struct
+import struct 
 import os 
 import sock352
+import random
 
 def main():
     
@@ -25,7 +26,7 @@ def main():
     # open the file for writing
     filename = args['filename']
     udpportRx = args['udpportRx']
-     
+    
     if (args['udpportTx']):
         udpportTx = args['udpportTx']
     else:
@@ -36,7 +37,7 @@ def main():
         port = args['port']
     else:
         port = 1111 
-     
+    
     if (filename):
         try: 
             fd = open(filename, "wb")
@@ -59,45 +60,51 @@ def main():
         sock352.init(udpportRx,udpportRx)
 
     s = sock352.socket()
-    
+
+    # set the maximum fragment size we will read on 
+    MAXFRAGMENTSIZE = 16384
 
     # binding the host to empty allows reception on
     # all network interfaces
     s.bind(('',port))
     s.listen(5)
-    
+
     # when accept returns, the client is connected 
     (s2,address) = s.accept() 
-    print ("here1") 
+
     # this receives the size of the file
     # as a 4 byte integer in network byte order (big endian)
-    
-    #TODO UNCOMMENT THIS
     longPacker = struct.Struct("!L")
-    
-    
-    long_test = s2.recv(4)
-    print("buffer len = ", len(long_test))
-    fn = longPacker.unpack(long_test)
+    long = s2.recv(4)
+    fn = longPacker.unpack(long)
     filelen = fn[0]
-    print(fn) 
 
+    # the MD5 computes a unique hash for all the data 
+
+    bytes_to_receive = filelen
     start_stamp = time.clock()
-    print("file len to recv is ", filelen)
+    
+    random.seed(a=352)
+    # main loop to receive the data from the client 
+    while (bytes_to_receive > 0):
+        size = random.randrange(1,MAXFRAGMENTSIZE)
+        if (bytes_to_receive >= size):
+            # pick a random size to receive
+            fragment = s2.recv(size)
+        else: 
+            fragment = s2.recv(bytes_to_receive)
 
-    file = s2.recv(filelen)
-
-    fd.write(file)
+        bytes_to_receive = bytes_to_receive - len(fragment)
+        fd.write(fragment)
 
     end_stamp = time.clock() 
     lapsed_seconds = end_stamp - start_stamp
 
-
+ 
     if (lapsed_seconds > 0.0):
-        print ("server1: received %d bytes in %0.6f seconds, %0.6f MB/s " % (filelen, lapsed_seconds,
-(filelen/lapsed_seconds)/(1024*1024)))
+        print ("server1: received %d bytes in %0.6f seconds, %0.6f MB/s " % (filelen, lapsed_seconds, (filelen/lapsed_seconds)/(1024*1024)))
     else:
-       print ("server1: received %d bytes in %d seconds, inf MB/s " % (filelen, lapsed_seconds))
+        print ("server1: received %d bytes in %d seconds, inf MB/s " % (filelen, lapsed_seconds))
     fd.close()
     s2.close()
     
