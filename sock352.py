@@ -10,7 +10,7 @@ from threading import Thread, Lock
 sock352PktHdrData = '!BBBBHHLLQQLL' 
 DEFAULT = 5299
 header_len = struct.calcsize(sock352PktHdrData)
-MAX_PACKET_SIZE = 32000
+MAX_PACKET_SIZE = 32*1024 #since KB
 
 
 
