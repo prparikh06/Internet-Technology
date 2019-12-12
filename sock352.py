@@ -11,6 +11,7 @@ sock352PktHdrData = '!BBBBHHLLQQLL'
 DEFAULT = 5299
 header_len = struct.calcsize(sock352PktHdrData)
 MAX_PACKET_SIZE = 64 * 1024 # KB
+WINDOW_SIZE = 262 * 1024
 
 
 
@@ -62,105 +63,7 @@ class socket:
         self.socket.bind(self.recv_addr)
         
         
-    #establish the connection - 3 way handshake
-    #TCP: step 1: connect - random number for sequence_no, flag = SYN, send packet to server
-    #step 2: accept - receive the packet - sequence_no = new random, flag = SYN | ACK, ack_no = old sequence_no + 1, send to client
-    #step 3: connect & accept- receive the packet - ack_no = seq_no + 1
-    #NOTE: address is of type in form {destination IP, port} that client passes in
 
-    # def connect(self,address):  # fill in your code here 
-    #     global portRx, portTx
-    #     print("header len: ", header_len)
-    #     if self.connected: #return error
-    #         print ("Client has already connected to server")
-        
-    #     destination = address[0] 
-        
-    #     print ("get hostname:",syssock.gethostname()) 
-                
-    #     self.recv_addr = (syssock.gethostname(), int(portRx)) #receiving = client
-    #     self.send_addr = (destination, portTx) # sending = server
-    #     self.socket.settimeout(0.2)
-    #     self.socket.bind(self.recv_addr)
-    #     print("initiating 3 way handshake!")
-
-    #     #STEP 1: send from client
-    #     randSeq = random.randint(1,100) #establish random sequence
-    #     print ("random int: ", randSeq)
-    #     #initialize, pack, and send the syn packet 
-    #     #print("header for payload", len(b''))
-    #     initialPacket = packet(SYN,header_len,randSeq,0,0)
-    #     self.send_packet(initialPacket,self.send_addr)
-
-    #     #STEP 3: recv ACK from server, send final ACK
-    #     syn_ack_packet, addr = self.recv_packet()
-    #     print("recvd syn_ack")
-    #     flags = syn_ack_packet.flags
-    #     print(flags)
-
-    #     #check flags
-    #     if flags == SYN | ACK:
-    #         print("step 3")
-    #         syn_ack_packet.payload = b''
-    #         syn_ack_packet.ack_no = syn_ack_packet.sequence_no + 1
-    #         syn_ack_packet.flags = ACK
-    #         self.send_packet(syn_ack_packet, self.send_addr)
-    #         print("should be done!!")
-            
-        
-    #     elif flags == RESET:
-    #         print ("something went wrong so connection has been reset")
-    #         return
-        
-    #     print("connecting...!")
-    #     self.connected = True
-    #     return 
-    
-    # def listen(self,backlog):
-    #     return
-
-    # #accept the connection
-    # def accept(self):
-    #     global portTx
-
-    #     print("ready to accept")
-    #     #STEP 2: server receives SYN and sends SYN-ACK in return    
-    #     initialPacket, addr = self.recv_packet()
-    #     flags = initialPacket.flags
-    #     self.send_addr = (addr[0], int(portTx))
-    #     print(flags)
-        
-    #     if flags == SYN: 
-    #         ack_no = initialPacket.sequence_no + 1
-    #         randSeq = random.randint(1,100)
-    #         self.seq = randSeq
-    #         seq_no = randSeq
-    #         flags = SYN | ACK
-    #         syn_ack_packet = packet(flags,header_len,seq_no,ack_no,0)
-             
-    #         self.send_packet(syn_ack_packet,self.send_addr)
-            
-    #     else: #pack and send the packet reset
-    #         initialPacket.flags = RESET
-    #         self.send_packet(initialPacket,self.send_addr)
-    #         #return
-                 
-    #     #STEP 3 CONTD
-    #     self.socket.settimeout(0.2)
-    #     final_packet, addr = self.recv_packet()
-    #     flags = final_packet.flags
-    #     if flags == ACK:
-    #         self.connected = True
-    #         print ("Accepted!")
-    #         self.connected = True 
-    #         self.ack = final_packet.ack_no
-    #     else:
-	# 	#reset
-    #         final_packet.flags = RESET
-    #         self.send_packet(final_packet, self.send_addr)
-    #         #return	
-    #     print("after connection:self.seq =",self.seq,"self.ack =", self.ack)
-    #     return (self, self.send_addr) 
     #establish the connection - 3 way handshake
     def connect(self,address):  # fill in your code here  
         global portRx, portTx
@@ -209,62 +112,6 @@ class socket:
                     self.send_packet2(ack_no=self.ack, flags=RESET)
         return (self,self.send_addr)  
 
-    #TCP Close = 2 double handshakes!
-    #Step 1: client sends FIN flag to server. use most recent sequence number
-    #Step 2: server receives; flag = ACK; ack_no = seq + 1 to client
-    #Step 3: again, server sends. FIN flag is set, 
-    #Step 4: client recvs and sends, ack = seq + 1; ACK flag
-    
-    # def close(self):   # fill in your code here
-        
-    #     #Step 1 client sends FIN
-        
-    #     print("current self.seq: ", self.seq) 
-        
-    #     #initialize, pack, and send the fin packet 
-    #     initialPacket = packet(FIN,header_len,self.seq,0,0)
-    #     self.send_packet(initialPacket,self.send_addr)
-
-    #     self.socket.settimeout(0.2)
-    #     #Step 2 recv packet and update
-    #     initialPacket, addr = self.recv_packet()
-    #     flags = initialPacket.flags
-    #     self.send_addr = (addr[0], int(portTx))
-    #     print(flags)
-        
-    #     if flags == FIN: 
-    #         ack_no = initialPacket.sequence_no + 1
-    #         flags = ACK
-    #         fin_packet = packet(flags,header_len,self.seq,ack_no,0)
-    #         self.send_packet(fin_packet,self.send_addr)
-    #         self.closed = True
-    #     elif flags == ACK and initialPacket.ack_no == self.seq + 1:
-    #         #TODO do something? 
-    #         print("this should theoretically break the loop") 
-      
-
-    #     self.socket.settimeout(0.2)
-    #     #Step 3
-    #     fin_pack, addr = self.recv_packet()
-    #     #flags = fin_pack.flags
-    #     payload = fin_pack.payload_len
-    #     if payload < 0:
-    #         return
-    #     elif fin_pack.flags == FIN: 
-    #   	    #send final ACK
-    #         flags = ACK
-    #         ack_no = fin_pack.sequence_no + 1
-    #         fin_packet = packet(flags,header_len,self.seq,ack_no,0)
-    #         self.send_packet(fin_packet, self.send_addr)
-
-    #     #else: #take care of this    
-    #     self.closed = True
-    #     #STEP 2 & 3: server receives FIN and sends FIN-ACK back
-      
-    #     print("Connection closed!!!")
-        
-    # #     self.socket.close()
-    #     return  
     def close(self):   # fill in your code here
         self.socket.settimeout(0.2)
         fin_sent = False
@@ -289,11 +136,6 @@ class socket:
             else:
                 if fin_pack['flags'] == FIN:
                     self.send_packet2(ack_no=fin_pack['seq_no']+1, flags=ACK)
-
-
-
-
-
 
     def send(self,buffer):  # fill in your code here 
         if not self.connected:
@@ -349,36 +191,6 @@ class socket:
         return rtn
 
 
-
-
-##        while packets_recvd < packets_to_send:
-##            if packets_recvd  == packets_to_send - 1:
-##                packet_size = header_len + nbytes - ((packets_to_send-1) * MAX_PACKET_SIZE)
-##            else: 
-##                packet_size = header_len + MAX_PACKET_SIZE
-##
-##            curr_packet = self.recv_packet2(size=packet_size)
-##            payload = curr_packet['payload']
-##            #print("recvd packet,payload size =  ",len(payload),". should match packet size?????:",packet_size)
-##            if curr_packet['flags'] != 0:
-##
-##                print("flag was not 0, nbd")
-##
-##            elif curr_packet['seq_no'] == self.seq:
-##                #self.seq += curr_packet['payload_len']
-##                self.buffer.append(curr_packet['payload']) 
-##                packets_recvd += 1
-##                # print("packet", packets_recvd, "of ", packets_to_send,"recvd")
-##                
-##            self.send_packet2(ack_no=self.seq, flags=ACK)
-##        
-##        final_str = b''.join(packets)
-##        # print("finsl string = ",final_str)
-##        # print("packets", packets)
-##        # print(len(final_str))
-##        return final_str
-                
-    
     def recv_ack(self,ack_no):
         
         print("ack = ",ack_no)
@@ -407,21 +219,6 @@ class socket:
             self.timeout = True
   
 
-    def send_packet(self,packetToSend, address):
-        my_struct = struct.Struct(sock352PktHdrData)
-        #print("type of payload", type(packetToSend.payload))
-        packetToSendData = my_struct.pack(packetToSend.version, packetToSend.flags, packetToSend.opt_ptr, packetToSend.protocol, packetToSend.checksum, packetToSend.header_len, packetToSend.source_port, packetToSend.dest_port, packetToSend.sequence_no, packetToSend.ack_no, packetToSend.window, packetToSend.payload_len)
-        
-        self.socket.sendto(packetToSendData, address)
-        return
-    
-    def recv_packet(self):
-        recvpacket, addr = self.socket.recvfrom(header_len)
-        packet_vals = struct.unpack(sock352PktHdrData,recvpacket)
-        print ("size of packet should be 12, is actually",len(packet_vals))
-        newPacket = packet(packet_vals[1],packet_vals[5], packet_vals[8], packet_vals[9], packet_vals[11])
-
-        return (newPacket,addr)
     
     def doNothing():
         pass
@@ -456,27 +253,11 @@ class socket:
         checksum = 0
         source_port = 0
         dest_port = 0
-        window = 0
+        window = WINDOW_SIZE
         payload_len = len(payload)
         HEADER_LEN = header_len
         header = struct.pack(sock352PktHdrData,version, flags, opt_ptr, protocol, checksum, HEADER_LEN, source_port, dest_port, seq_no, ack_no, window, payload_len)
         packet = header + payload
         self.socket.sendto(packet, self.send_addr)
 
-#creating a packet "struct"
-class packet:
-    def __init__(self,flags, header_len,sequence_no,ack_no,payload_len):     #initialize the packet
-        self.version = 1 #0
-        self.flags = flags #1
-        self.opt_ptr = 0 #2
-        self.checksum = 0 #3 TODO what is this
-        self.protocol = 0 #4
-        self.header_len = header_len #5
-        self.source_port = 0 #6
-        self.dest_port = 0 #7
-        self.sequence_no = sequence_no #8
-        self.ack_no = ack_no #9
-        self.window = 0 #10
-        self.payload_len = payload_len #11
-        return    
- 
+
