@@ -10,7 +10,7 @@ from threading import Thread, Lock
 sock352PktHdrData = '!BBBBHHLLQQLL' 
 DEFAULT = 5299
 header_len = struct.calcsize(sock352PktHdrData)
-MAX_PACKET_SIZE = 32 * 1024
+MAX_PACKET_SIZE = 64 * 1024 # KB
 
 
 
@@ -332,11 +332,11 @@ class socket:
     
 
     def recv(self,nbytes):  # fill in your code here
-        packets_recvd = 0     
+        packets_recvd = 0
+        packet_size = 0
         self.socket.settimeout(None)
         packets_to_send = int(math.ceil(float(nbytes)/MAX_PACKET_SIZE))
         print("we need to send ", packets_to_send, "packets to send all ", nbytes, "nbytes")
-        packet_size = 0
         while (len(self.buffer) < nbytes):
             curr_packet = self.recv_packet2(size=header_len + MAX_PACKET_SIZE)
 
